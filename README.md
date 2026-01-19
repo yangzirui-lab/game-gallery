@@ -22,6 +22,7 @@ A Node.js CLI tool to manage your Steam game backlog, using Git for version cont
 | 雾锁王国 | playing | - |
 |  幻兽帕鲁 | dropped | - |
 | Sekiro: Shadows Die Twice | backlog | - |
+| 幻兽帕鲁 | backlog | - |
 <!-- QUEUE_END -->
 
 ## Usage
