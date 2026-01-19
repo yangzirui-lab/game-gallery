@@ -27,13 +27,21 @@ export class Store {
   private data: StoreData;
 
   constructor() {
+    this.data = {
+      games: [],
+      config: { autoCommit: true },
+    };
+    this.loadSync();
+  }
+
+  private loadSync() {
     if (fs.existsSync(DATA_FILE)) {
-      this.data = JSON.parse(fs.readFileSync(DATA_FILE, "utf-8"));
+      try {
+        this.data = JSON.parse(fs.readFileSync(DATA_FILE, "utf-8"));
+      } catch (err) {
+        console.error(`[Store] Failed to load data: ${err}`);
+      }
     } else {
-      this.data = {
-        games: [],
-        config: { autoCommit: true },
-      };
       this.saveSync();
     }
   }
@@ -86,10 +94,12 @@ export class Store {
   }
 
   getGames() {
+    this.loadSync();
     return this.data.games;
   }
 
   addGame(game: Omit<Game, "id" | "addedAt" | "lastUpdated">) {
+    this.loadSync();
     const newGame: Game = {
       ...game,
       id: `game-${Date.now()}`,
@@ -101,6 +111,7 @@ export class Store {
   }
 
   updateGame(id: string, updates: Partial<Omit<Game, "id" | "addedAt">>) {
+    this.loadSync();
     const index = this.data.games.findIndex(
       (g) => g.id === id || g.name === id,
     );
@@ -119,6 +130,7 @@ export class Store {
   }
 
   removeGame(id: string) {
+    this.loadSync();
     const index = this.data.games.findIndex(
       (g) => g.id === id || g.name === id,
     );
