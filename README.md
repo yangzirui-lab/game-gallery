@@ -4,8 +4,9 @@ A Node.js CLI tool to manage your Steam game backlog, using Git for version cont
 
 ## Features
 
-- **Git integration**: Every change is automatically committed to your local Git repository.
-- **Easy management**: Add, list, update, and remove games from your queue.
+- **Git integration**: Every change (CLI or Web) is automatically committed to your local Git repository.
+- **Web Dashboard**: A modern, interactive web interface to manage your queue visually.
+- **Easy management**: Add, list, update, and remove games from your queue via CLI or Web.
 - **JSON storage**: Data is stored in a simple `games.json` file.
 
 ## Installation
@@ -18,7 +19,6 @@ A Node.js CLI tool to manage your Steam game backlog, using Git for version cont
 <!-- QUEUE_START -->
 | Game | Status | Notes |
 | :--- | :--- | :--- |
-| 幻兽帕鲁 | finished | - |
 <!-- QUEUE_END -->
 
 ## Usage
@@ -30,6 +30,16 @@ npm start
 ```
 
 This will open a menu where you can add, list, update, or remove games.
+
+### Web Dashboard
+
+For a visual experience, you can use the Web Dashboard:
+
+```bash
+npm run web
+```
+
+This will automatically start the backend server, the web development server, and open your browser to the dashboard. All changes made in the web UI are automatically committed to Git.
 
 ### Direct Commands
 
