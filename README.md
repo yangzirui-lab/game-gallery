@@ -18,7 +18,7 @@ A Node.js CLI tool to manage your Steam game backlog, using Git for version cont
 <!-- QUEUE_START -->
 | Game | Status | Notes |
 | :--- | :--- | :--- |
-| Cyberpunk 2077 | playing | - |
+| Cyberpunk 2077 | dropped | - |
 | 雾锁王国 | playing | - |
 | Sekiro: Shadows Die Twice | dropped | - |
 | Elden Ring | backlog | - |
