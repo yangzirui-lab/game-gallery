@@ -5,7 +5,7 @@
   "description": "游戏待玩队列",
   "main": "index.js",
   "scripts": {
-    "web": "git pull && concurrently \"npm run server\" \"cd web && npm run dev\"",
+    "web": "cd web && npm run dev",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
