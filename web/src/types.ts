@@ -8,6 +8,8 @@ export interface Game {
   lastUpdated: string;
   steamUrl?: string;
   coverImage?: string;
+  positivePercentage?: number;
+  totalReviews?: number;
 }
 
 export interface GameQueueData {

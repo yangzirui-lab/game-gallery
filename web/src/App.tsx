@@ -5,7 +5,7 @@ import { SteamSearch } from './components/SteamSearch'
 import { Settings } from './components/Settings'
 import type { Game } from './types'
 import { AnimatePresence, motion } from 'framer-motion'
-import { SettingsIcon, Loader2, Trash2 } from 'lucide-react'
+import { SettingsIcon, Loader2, Trash2, Play, Bookmark, CheckCircle } from 'lucide-react'
 import { githubService } from './services/github'
 
 function App() {
@@ -245,7 +245,7 @@ function App() {
                   alignItems: 'center',
                   gap: '0.5rem'
                 }}>
-                  🎮 Playing ({groupedGames.playing.length})
+                  <Play size={20} /> Playing ({groupedGames.playing.length})
                 </h2>
                 <div className="game-list">
                   <AnimatePresence>
@@ -295,7 +295,7 @@ function App() {
                   alignItems: 'center',
                   gap: '0.5rem'
                 }}>
-                  📋 Pending ({groupedGames.pending.length})
+                  <Bookmark size={20} /> Pending ({groupedGames.pending.length})
                 </h2>
                 <div className="game-list">
                   <AnimatePresence>
@@ -345,7 +345,7 @@ function App() {
                   alignItems: 'center',
                   gap: '0.5rem'
                 }}>
-                  ✅ Completion ({groupedGames.completion.length})
+                  <CheckCircle size={20} /> Completion ({groupedGames.completion.length})
                 </h2>
                 <div className="game-list">
                   <AnimatePresence>

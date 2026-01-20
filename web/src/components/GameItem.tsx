@@ -1,18 +1,12 @@
 import React, { useRef, useEffect, useState } from "react";
 import type { Game, GameStatus } from "../types";
-import { CheckCircle, Play, Bookmark, ExternalLink } from "lucide-react";
+import { ExternalLink } from "lucide-react";
 
 interface GameItemProps {
   game: Game;
   onUpdate: (id: string, updates: Partial<Game>) => void;
   isHighlighted: boolean;
 }
-
-const statusIcons: Record<GameStatus, React.ReactNode> = {
-  playing: <Play size={14} className="text-status-playing" />,
-  pending: <Bookmark size={14} className="text-status-backlog" />,
-  completion: <CheckCircle size={14} className="text-status-finished" />,
-};
 
 export const GameItem: React.FC<GameItemProps> = ({ game, onUpdate, isHighlighted }) => {
   const itemRef = useRef<HTMLDivElement>(null);
@@ -116,16 +110,50 @@ export const GameItem: React.FC<GameItemProps> = ({ game, onUpdate, isHighlighte
           justifyContent: 'space-between',
           gap: '1rem'
         }}>
-          <input
-            className="game-name"
-            defaultValue={game.name}
-            onBlur={handleNameChange}
-            placeholder="Game Name"
-            style={{
-              flex: 1,
-              minWidth: 0
-            }}
-          />
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <input
+              className="game-name"
+              defaultValue={game.name}
+              onBlur={handleNameChange}
+              placeholder="Game Name"
+              style={{
+                width: '100%',
+                fontSize: '1rem'
+              }}
+            />
+            {(game.positivePercentage !== undefined || game.totalReviews !== undefined) && (
+              <div style={{
+                marginTop: '0.25rem',
+                fontSize: '0.8rem',
+                color: 'var(--text-secondary)',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '1rem'
+              }}>
+                {game.positivePercentage !== undefined && (
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.25rem',
+                    color: game.positivePercentage >= 80 ? '#66c0f4' : game.positivePercentage >= 60 ? '#ffa500' : '#999'
+                  }}>
+                    <span>👍</span>
+                    <span>{game.positivePercentage}%</span>
+                  </div>
+                )}
+                {game.totalReviews !== undefined && (
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.25rem'
+                  }}>
+                    <span>💬</span>
+                    <span>{game.totalReviews.toLocaleString()} reviews</span>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
           <div style={{
             display: 'flex',
             alignItems: 'center',
@@ -159,16 +187,6 @@ export const GameItem: React.FC<GameItemProps> = ({ game, onUpdate, isHighlighte
           </div>
         </div>
 
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '0.5rem',
-          fontSize: '0.85rem',
-          color: 'var(--text-secondary)'
-        }}>
-          {statusIcons[game.status]}
-          <span style={{ textTransform: 'capitalize' }}>{game.status}</span>
-        </div>
       {isEditingSteamUrl && (
         <div style={{ marginTop: '0.5rem', display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
           <input
