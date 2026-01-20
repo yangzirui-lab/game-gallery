@@ -126,6 +126,7 @@ export const GameItem: React.FC<GameItemProps> = ({ game, onUpdate, isHighlighte
               <div style={{
                 marginTop: '0.25rem',
                 fontSize: '0.8rem',
+                paddingLeft: '0.25rem',
                 color: game.positivePercentage >= 80 ? '#66c0f4' : game.positivePercentage >= 60 ? '#ffa500' : '#999'
               }}>
                 好评率-{game.positivePercentage}%({game.totalReviews.toLocaleString()}评论数)
@@ -158,8 +159,10 @@ export const GameItem: React.FC<GameItemProps> = ({ game, onUpdate, isHighlighte
               onChange={handleStatusChange}
               style={{
                 color: `var(--status-${game.status})`,
-                padding: '0.5rem 3rem 0.5rem 1rem',
-                minWidth: '140px'
+                padding: '0.5rem 1rem',
+                paddingRight: '2.5rem',
+                minWidth: '140px',
+                backgroundPosition: 'right 0.75rem center'
               }}
             >
               <option value="playing">Playing</option>
