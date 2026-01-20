@@ -21,6 +21,12 @@ export class GitHubService {
       const stored = localStorage.getItem(STORAGE_KEY);
       if (stored) {
         this.config = JSON.parse(stored);
+        // 强制修正为正确的owner和repo
+        if (this.config && (this.config.owner !== 'yangzirui-lab' || this.config.repo !== 'game-queue')) {
+          this.config.owner = 'yangzirui-lab';
+          this.config.repo = 'game-queue';
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(this.config));
+        }
       }
       return this.config;
     } catch (error) {

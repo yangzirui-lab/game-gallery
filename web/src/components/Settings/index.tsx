@@ -21,6 +21,10 @@ export const Settings: React.FC<SettingsProps> = ({ onClose }) => {
     const config = githubService.getConfig();
     if (config) {
       setToken(config.token);
+      // 强制更新为正确的owner和repo
+      if (config.owner !== FIXED_OWNER || config.repo !== FIXED_REPO) {
+        githubService.saveConfig({ token: config.token, owner: FIXED_OWNER, repo: FIXED_REPO });
+      }
     }
   }, []);
 
