@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useMemo, useEffect, useRef } from 'react'
 import classNames from 'classnames'
 import { GameItem } from '../components/GameItem'
 import { SearchBar } from '../components/SearchBar'
@@ -8,6 +8,7 @@ import type { Game } from '../types'
 import { AnimatePresence, motion } from 'framer-motion'
 import { SettingsIcon, Loader2, Play, Bookmark, CheckCircle } from 'lucide-react'
 import { githubService } from '../services/github'
+import { steamService } from '../services/steam'
 import styles from './index.module.scss'
 
 function App() {
@@ -59,6 +60,73 @@ function App() {
       return () => clearTimeout(timer)
     }
   }, [toast])
+
+  // 使用 ref 保存最新的 games 状态
+  const gamesRef = useRef(games)
+  useEffect(() => {
+    gamesRef.current = games
+  }, [games])
+
+  // 定时刷新游戏好评率（每30分钟）
+  useEffect(() => {
+    const refreshReviews = async () => {
+      const currentGames = gamesRef.current
+      if (currentGames.length === 0) return
+
+      console.log('开始刷新游戏好评率...')
+
+      for (const game of currentGames) {
+        if (!game.steamUrl) continue
+
+        // 从 steamUrl 中提取 appId
+        const match = game.steamUrl.match(/\/app\/(\d+)/)
+        if (!match) continue
+
+        const appId = parseInt(match[1])
+
+        try {
+          const reviews = await steamService.getGameReviews(appId)
+
+          // 只有当好评率数据有变化时才更新
+          if (reviews.positivePercentage !== game.positivePercentage ||
+              reviews.totalReviews !== game.totalReviews) {
+
+            const updatedGame: Game = {
+              ...game,
+              positivePercentage: reviews.positivePercentage ?? game.positivePercentage,
+              totalReviews: reviews.totalReviews ?? game.totalReviews,
+              lastUpdated: new Date().toISOString()
+            }
+
+            // 更新本地状态
+            setGames(prevGames =>
+              prevGames.map(g => g.id === game.id ? updatedGame : g)
+            )
+
+            console.log(`已更新 ${game.name} 的好评率`)
+          }
+        } catch (err) {
+          console.error(`刷新 ${game.name} 好评率失败:`, err)
+        }
+
+        // 添加延迟避免请求过快
+        await new Promise(resolve => setTimeout(resolve, 1000))
+      }
+
+      console.log('好评率刷新完成')
+    }
+
+    // 延迟5秒后进行首次刷新（避免阻塞页面加载）
+    const initialTimer = setTimeout(refreshReviews, 5000)
+
+    // 每30分钟刷新一次
+    const interval = setInterval(refreshReviews, 30 * 60 * 1000)
+
+    return () => {
+      clearTimeout(initialTimer)
+      clearInterval(interval)
+    }
+  }, [])
 
   // Group games by status
   const groupedGames = useMemo(() => {
