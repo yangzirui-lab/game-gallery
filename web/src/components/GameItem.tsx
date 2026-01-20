@@ -39,6 +39,20 @@ export const GameItem: React.FC<GameItemProps> = ({ game, onUpdate, onDelete, is
     setIsEditingSteamUrl(false);
   };
 
+  // 将 Steam web URL 转换为客户端 URL
+  const getSteamClientUrl = (steamUrl: string | undefined): string => {
+    if (!steamUrl) return '#';
+
+    // 从 URL 中提取 appId
+    const match = steamUrl.match(/\/app\/(\d+)/);
+    if (match && match[1]) {
+      return `steam://store/${match[1]}`;
+    }
+
+    // 如果提取失败，返回原始 URL
+    return steamUrl;
+  };
+
   return (
     <div
       ref={itemRef}
@@ -111,9 +125,7 @@ export const GameItem: React.FC<GameItemProps> = ({ game, onUpdate, onDelete, is
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
               <a
-                href={game.steamUrl || '#'}
-                target={game.steamUrl ? "_blank" : "_self"}
-                rel="noopener noreferrer"
+                href={getSteamClientUrl(game.steamUrl)}
                 onClick={(e) => !game.steamUrl && (e.preventDefault(), setIsEditingSteamUrl(true))}
                 className="game-name-link"
                 style={{
@@ -123,7 +135,8 @@ export const GameItem: React.FC<GameItemProps> = ({ game, onUpdate, onDelete, is
                   textDecoration: 'none',
                   overflow: 'hidden',
                   textOverflow: 'ellipsis',
-                  whiteSpace: 'nowrap'
+                  whiteSpace: 'nowrap',
+                  cursor: game.steamUrl ? 'pointer' : 'default'
                 }}
               >
                 {game.name}
