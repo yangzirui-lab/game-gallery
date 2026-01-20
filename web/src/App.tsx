@@ -261,7 +261,7 @@ function App() {
                         style={{
                           display: 'flex',
                           gap: '0.5rem',
-                          alignItems: 'stretch',
+                          alignItems: 'center',
                           position: 'relative'
                         }}
                         className="game-item-wrapper"
@@ -311,7 +311,7 @@ function App() {
                         style={{
                           display: 'flex',
                           gap: '0.5rem',
-                          alignItems: 'stretch',
+                          alignItems: 'center',
                           position: 'relative'
                         }}
                         className="game-item-wrapper"
@@ -361,7 +361,7 @@ function App() {
                         style={{
                           display: 'flex',
                           gap: '0.5rem',
-                          alignItems: 'stretch',
+                          alignItems: 'center',
                           position: 'relative'
                         }}
                         className="game-item-wrapper"

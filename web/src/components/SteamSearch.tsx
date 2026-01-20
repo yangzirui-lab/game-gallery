@@ -180,10 +180,10 @@ export const SteamSearch: React.FC<SteamSearchProps> = ({ onAddGame, onClose }) 
                       <span>{game.positivePercentage}%</span>
                     </div>
                   )}
-                  {game.averagePlaytime !== null && (
+                  {game.totalReviews !== null && (
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', color: '#999' }}>
-                      <span style={{ fontSize: '1rem' }}>⏱️</span>
-                      <span>{game.averagePlaytime}h</span>
+                      <span style={{ fontSize: '1rem' }}>💬</span>
+                      <span>{game.totalReviews.toLocaleString()} reviews</span>
                     </div>
                   )}
                   {game.tags.length > 0 && (
