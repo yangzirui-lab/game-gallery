@@ -1,0 +1,151 @@
+.overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+
+  .modal {
+    background: #1a1a1a;
+    border-radius: 12px;
+    padding: 2rem;
+    max-width: 700px;
+    width: 90%;
+    max-height: 80vh;
+    position: relative;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+    display: flex;
+    flex-direction: column;
+
+    .closeBtn {
+      position: absolute;
+      top: 1rem;
+      right: 1rem;
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: #999;
+    }
+
+    .title {
+      margin-bottom: 1.5rem;
+      color: #fff;
+    }
+
+    .searchWrapper {
+      margin-bottom: 1.5rem;
+
+      .inputWrapper {
+        position: relative;
+
+        .inputPrimary {
+          width: 100%;
+          padding-right: 3rem;
+          background: var(--card-bg);
+          border: 1px solid var(--card-border);
+          border-radius: 0.5rem;
+          padding: 0.75rem 1rem;
+          color: var(--text-primary);
+          font-size: 1rem;
+
+          &:focus {
+            outline: none;
+            border-color: var(--accent-color);
+          }
+        }
+
+        .loadingIcon {
+          position: absolute;
+          right: 1rem;
+          top: 50%;
+          transform: translateY(-50%);
+          color: #1b8dd4;
+        }
+      }
+
+      .searchStatus {
+        margin-top: 0.5rem;
+        font-size: 0.85rem;
+        color: #999;
+      }
+    }
+
+    .errorBox {
+      padding: 0.75rem;
+      background: #ff4444;
+      color: white;
+      border-radius: 8px;
+      margin-bottom: 1rem;
+    }
+
+    .resultsList {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      max-height: calc(80vh - 200px);
+      overflow-y: auto;
+
+      .resultItem {
+        display: flex;
+        gap: 1rem;
+        padding: 0.75rem;
+        background: #2a2a2a;
+        border-radius: 8px;
+        align-items: center;
+        border: 1px solid #333;
+
+        .coverImage {
+          width: 120px;
+          height: 45px;
+          object-fit: cover;
+          border-radius: 4px;
+        }
+
+        .gameInfo {
+          flex: 1;
+
+          .gameName {
+            font-weight: bold;
+            color: #fff;
+            margin-bottom: 0.25rem;
+          }
+
+          .gameMeta {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+            font-size: 0.85rem;
+          }
+        }
+
+        .metaRating {
+            &.high { color: #66c0f4; }
+            &.medium { color: #ffa500; }
+            &.low { color: #999; }
+        }
+
+        .metaTags {
+            color: #666;
+        }
+
+        .addBtn {
+          padding: 0.5rem 1rem;
+          background: #28a745;
+          color: white;
+          border: none;
+          border-radius: 6px;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+          white-space: nowrap;
+        }
+      }
+    }
+  }
+}

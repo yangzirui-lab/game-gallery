@@ -1,5 +1,6 @@
 import React from "react";
 import { Search } from "lucide-react";
+import styles from "./index.module.scss";
 
 interface SearchBarProps {
   onSearch: (term: string) => void;
@@ -8,11 +9,11 @@ interface SearchBarProps {
 
 export const SearchBar: React.FC<SearchBarProps> = ({ onSearch, value }) => {
   return (
-    <div className="search-container">
-      <Search className="search-icon" size={18} />
+    <div className={styles.searchContainer}>
+      <Search className={styles.searchIcon} size={18} />
       <input 
         type="text" 
-        className="search-input"
+        className={styles.searchInput}
         placeholder="Search games..."
         value={value}
         onChange={(e) => onSearch(e.target.value)}

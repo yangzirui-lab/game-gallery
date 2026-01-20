@@ -1,0 +1,224 @@
+.gameCard {
+  background: var(--panel-bg);
+  border: 1px solid var(--card-border);
+  border-radius: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  scroll-margin-top: 100px;
+  min-height: 120.5px;
+  position: relative; // Moved from inline style for better structure
+
+  &:hover {
+    border-color: rgba(255, 255, 255, 0.2);
+    transform: translateY(-2px);
+    box-shadow: 0 10px 20px -5px rgba(0, 0, 0, 0.2);
+
+    .deleteBtnAbsolute {
+      opacity: 1;
+    }
+  }
+
+  &.playing {
+    border-left: 4px solid var(--status-playing);
+  }
+
+  &.highlight {
+    animation: pulseBorder 2s infinite;
+  }
+
+  .deleteBtnAbsolute {
+    position: absolute;
+    top: 0.5rem;
+    right: 0.5rem;
+    background: rgba(15, 23, 42, 0.6);
+    border: 1px solid var(--card-border);
+    border-radius: 50%;
+    color: var(--text-secondary);
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    opacity: 0;
+    z-index: 10;
+    backdrop-filter: blur(4px);
+
+    &:hover {
+      background: var(--status-dropped);
+      color: white;
+      border-color: var(--status-dropped);
+      transform: scale(1.1);
+    }
+  }
+
+  .gameWrapper {
+    display: flex;
+    flex-direction: row;
+    padding: 0;
+    overflow: hidden;
+    position: relative;
+    width: 100%;
+  }
+
+  .gameCover {
+    width: 320px;
+    min-width: 320px;
+    object-fit: cover;
+    border-radius: 8px 0 0 8px;
+  }
+
+  .gameCoverPlaceholder {
+    width: 320px;
+    min-width: 320px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 8px 0 0 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2.5rem;
+    color: rgba(255, 255, 255, 0.3);
+    font-weight: bold;
+  }
+
+  .gameContent {
+    flex: 1;
+    padding: 1rem 1.25rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    min-width: 0;
+    gap: 0.75rem;
+  }
+
+  .gameHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+
+  .gameTitleArea {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .gameTitleRow {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .gameNameLink {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    text-decoration: none;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+
+    &:hover {
+      color: var(--accent-color) !important;
+      text-decoration: underline !important;
+    }
+  }
+
+  .gameMeta {
+    margin-top: 0.25rem;
+    font-size: 0.8rem;
+    padding-left: 0.25rem;
+    display: flex;
+    gap: 0.75rem;
+    align-items: center;
+  }
+
+  .metaRating {
+    &.high { color: #66c0f4; }
+    &.medium { color: #ffa500; }
+    &.low { color: #999; }
+  }
+
+  .metaPlaceholder {
+    visibility: hidden;
+  }
+
+  .gameActions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-shrink: 0;
+  }
+
+  .gameStatusSelect {
+    background: var(--card-bg);
+    color: var(--text-primary);
+    border: 1px solid var(--card-border);
+    border-radius: 0.5rem;
+    padding: 0.5rem 0.5rem;
+    padding-right: 1.5rem;
+    font-size: 0.875rem;
+    cursor: pointer;
+    appearance: none;
+    -webkit-appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0.5rem center;
+    background-size: 1rem;
+  }
+
+  .steamUrlEditRow {
+    margin-top: 0.5rem;
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+  }
+
+  .inputPrimary {
+    flex: 1;
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: 0.5rem;
+    padding: 0.5rem 1rem;
+    color: var(--text-primary);
+    font-size: 1rem;
+
+    &:focus {
+      outline: none;
+      border-color: var(--accent-color);
+    }
+  }
+
+  .btnSave {
+    padding: 0.25rem 0.75rem;
+    background: #1b8dd4;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+
+  .btnCancel {
+    padding: 0.25rem 0.75rem;
+    background: #666;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+}
+
+@keyframes pulseBorder {
+  0% {
+    box-shadow: 0 0 0 0px var(--accent-glow);
+  }
+  70% {
+    box-shadow: 0 0 0 10px rgba(59, 130, 246, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0px rgba(59, 130, 246, 0);
+  }
+}

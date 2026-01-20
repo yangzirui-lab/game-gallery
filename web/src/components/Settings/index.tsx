@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, Save, CheckCircle, XCircle, Loader2 } from 'lucide-react';
-import { githubService } from '../services/github';
+import { githubService } from '../../services/github';
+import styles from './index.module.scss';
 
 interface SettingsProps {
   onClose: () => void;
@@ -93,76 +94,33 @@ export const Settings: React.FC<SettingsProps> = ({ onClose }) => {
   };
 
   return (
-    <div
-      style={{
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        background: 'rgba(0, 0, 0, 0.7)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        zIndex: 1000,
-      }}
-    >
-      <div
-        style={{
-          background: '#1a1a1a',
-          borderRadius: '12px',
-          padding: '2rem',
-          maxWidth: '600px',
-          width: '90%',
-          position: 'relative',
-          boxShadow: '0 8px 32px rgba(0, 0, 0, 0.6)',
-        }}
-      >
-        <button
-          onClick={onClose}
-          style={{
-            position: 'absolute',
-            top: '1rem',
-            right: '1rem',
-            background: 'none',
-            border: 'none',
-            cursor: 'pointer',
-            color: '#999',
-          }}
-        >
+    <div className={styles.overlay}>
+      <div className={styles.modal}>
+        <button onClick={onClose} className={styles.closeBtn}>
           <X size={24} />
         </button>
 
-        <h2 style={{ marginBottom: '1.5rem', color: '#fff' }}>GitHub 配置</h2>
+        <h2 className={styles.title}>GitHub 配置</h2>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+        <div className={styles.form}>
           <div>
-            <label
-              style={{
-                display: 'block',
-                marginBottom: '0.5rem',
-                color: '#ccc',
-                fontSize: '0.9rem',
-              }}
-            >
+            <label className={styles.label}>
               GitHub Token
             </label>
             <input
               type="password"
-              className="input-primary"
+              className={styles.inputPrimary}
               placeholder="ghp_xxxxxxxxxxxxxxxxxxxx"
               value={token}
               onChange={(e) => setToken(e.target.value)}
               onKeyDown={handleKeyDown}
-              style={{ width: '100%' }}
             />
-            <div style={{ marginTop: '0.25rem', fontSize: '0.8rem', color: '#666' }}>
+            <div className={styles.helpText}>
               需要 <code>repo</code> 权限。
               <a
                 href="https://github.com/settings/tokens/new"
                 target="_blank"
                 rel="noopener noreferrer"
-                style={{ color: '#1b8dd4', marginLeft: '0.5rem' }}
               >
                 创建 Token
               </a>
@@ -170,99 +128,51 @@ export const Settings: React.FC<SettingsProps> = ({ onClose }) => {
           </div>
 
           <div>
-            <label
-              style={{
-                display: 'block',
-                marginBottom: '0.5rem',
-                color: '#ccc',
-                fontSize: '0.9rem',
-              }}
-            >
+            <label className={styles.label}>
               仓库所有者（用户名或组织名）
             </label>
             <input
               type="text"
-              className="input-primary"
+              className={styles.inputPrimary}
               placeholder="your-username"
               value={owner}
               onChange={(e) => setOwner(e.target.value)}
               onKeyDown={handleKeyDown}
-              style={{ width: '100%' }}
             />
           </div>
 
           <div>
-            <label
-              style={{
-                display: 'block',
-                marginBottom: '0.5rem',
-                color: '#ccc',
-                fontSize: '0.9rem',
-              }}
-            >
+            <label className={styles.label}>
               仓库名称
             </label>
             <input
               type="text"
-              className="input-primary"
+              className={styles.inputPrimary}
               placeholder="game-queue"
               value={repo}
               onChange={(e) => setRepo(e.target.value)}
               onKeyDown={handleKeyDown}
-              style={{ width: '100%' }}
             />
           </div>
 
           {errorMessage && (
-            <div
-              style={{
-                padding: '0.75rem',
-                background: '#ff4444',
-                color: 'white',
-                borderRadius: '8px',
-                fontSize: '0.9rem',
-              }}
-            >
+            <div className={styles.errorBox}>
               {errorMessage}
             </div>
           )}
 
           {testStatus === 'success' && (
-            <div
-              style={{
-                padding: '0.75rem',
-                background: '#28a745',
-                color: 'white',
-                borderRadius: '8px',
-                fontSize: '0.9rem',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.5rem',
-              }}
-            >
+            <div className={styles.successBox}>
               <CheckCircle size={18} />
               连接成功！
             </div>
           )}
 
-          <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
+          <div className={styles.actions}>
             <button
               onClick={handleTest}
               disabled={isTesting || !token || !owner || !repo}
-              style={{
-                flex: 1,
-                padding: '0.75rem',
-                background: isTesting ? '#555' : '#333',
-                color: 'white',
-                border: '1px solid #555',
-                borderRadius: '8px',
-                cursor: isTesting ? 'not-allowed' : 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '0.5rem',
-                fontSize: '0.95rem',
-              }}
+              className={styles.btnTest}
             >
               {isTesting ? (
                 <>
@@ -282,20 +192,7 @@ export const Settings: React.FC<SettingsProps> = ({ onClose }) => {
             <button
               onClick={handleSave}
               disabled={isSaving || !token || !owner || !repo}
-              style={{
-                flex: 1,
-                padding: '0.75rem',
-                background: isSaving ? '#555' : '#28a745',
-                color: 'white',
-                border: 'none',
-                borderRadius: '8px',
-                cursor: isSaving ? 'not-allowed' : 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '0.5rem',
-                fontSize: '0.95rem',
-              }}
+              className={styles.btnSave}
             >
               {isSaving ? (
                 <>
@@ -311,19 +208,9 @@ export const Settings: React.FC<SettingsProps> = ({ onClose }) => {
             </button>
           </div>
 
-          <div
-            style={{
-              marginTop: '1rem',
-              padding: '1rem',
-              background: '#2a2a2a',
-              borderRadius: '8px',
-              fontSize: '0.85rem',
-              color: '#999',
-              lineHeight: '1.6',
-            }}
-          >
-            <strong style={{ color: '#fff' }}>使用说明：</strong>
-            <ul style={{ marginTop: '0.5rem', paddingLeft: '1.5rem' }}>
+          <div className={styles.instructions}>
+            <strong>使用说明：</strong>
+            <ul>
               <li>创建一个 GitHub Personal Access Token（需要 <code>repo</code> 权限）</li>
               <li>填写您的 GitHub 用户名和仓库名称</li>
               <li>点击"测试连接"验证配置是否正确</li>

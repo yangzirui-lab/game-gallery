@@ -1,12 +1,14 @@
 import { useState, useMemo, useEffect } from 'react'
-import { GameItem } from './components/GameItem'
-import { SearchBar } from './components/SearchBar'
-import { SteamSearch } from './components/SteamSearch'
-import { Settings } from './components/Settings'
-import type { Game } from './types'
+import classNames from 'classnames'
+import { GameItem } from '../components/GameItem'
+import { SearchBar } from '../components/SearchBar'
+import { SteamSearch } from '../components/SteamSearch'
+import { Settings } from '../components/Settings'
+import type { Game } from '../types'
 import { AnimatePresence, motion } from 'framer-motion'
 import { SettingsIcon, Loader2, Play, Bookmark, CheckCircle } from 'lucide-react'
-import { githubService } from './services/github'
+import { githubService } from '../services/github'
+import styles from './index.module.scss'
 
 function App() {
   const [games, setGames] = useState<Game[]>([])
@@ -184,43 +186,20 @@ function App() {
   }
 
   return (
-    <div className="app">
-      <header className="header">
-        <h1>GameGallery</h1>
-        <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+    <div className={styles.app}>
+      <header className={styles.header}>
+        <h1>Game Queue</h1>
+        <div className={styles.headerActions}>
           <SearchBar value={searchTerm} onSearch={handleSearch} />
           <button
             onClick={() => setShowSteamSearch(true)}
-            style={{
-              padding: '0.5rem 1rem',
-              background: '#1b8dd4',
-              color: 'white',
-              border: 'none',
-              borderRadius: '8px',
-              cursor: 'pointer',
-              whiteSpace: 'nowrap',
-              fontSize: '0.9rem',
-              fontWeight: '500'
-            }}
+            className={styles.btnSteam}
           >
             从 Steam 添加
           </button>
           <button
             onClick={() => setShowSettings(true)}
-            style={{
-              padding: '0.5rem 1rem',
-              background: '#333',
-              color: 'white',
-              border: '1px solid #555',
-              borderRadius: '8px',
-              cursor: 'pointer',
-              whiteSpace: 'nowrap',
-              fontSize: '0.9rem',
-              fontWeight: '500',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.5rem'
-            }}
+            className={styles.btnSettings}
           >
             <SettingsIcon size={18} />
             设置
@@ -230,80 +209,40 @@ function App() {
 
       <main>
         {isLoading ? (
-          <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-secondary)' }}>
-            <Loader2 className="animate-spin" size={32} style={{ margin: '0 auto' }} />
-            <div style={{ marginTop: '1rem' }}>加载中...</div>
+          <div className={styles.loadingContainer}>
+            <Loader2 className={`${styles.loaderIcon} animate-spin`} size={32} />
+            <div className={styles.mt1}>加载中...</div>
           </div>
         ) : (
           <div>
             {/* Tab Navigation - iOS Style */}
-            <div style={{
-              display: 'inline-flex',
-              background: 'rgba(255, 255, 255, 0.05)',
-              borderRadius: '12px',
-              padding: '4px',
-              marginBottom: '2rem',
-              border: '1px solid rgba(255, 255, 255, 0.1)'
-            }}>
+            <div className={styles.tabNav}>
               <button
                 onClick={() => setActiveTab('playing')}
-                style={{
-                  padding: '0.65rem 1.25rem',
-                  background: activeTab === 'playing' ? 'var(--status-playing)' : 'transparent',
-                  border: 'none',
-                  borderRadius: '10px',
-                  color: activeTab === 'playing' ? '#fff' : 'var(--text-secondary)',
-                  cursor: 'pointer',
-                  fontSize: '0.9rem',
-                  fontWeight: '500',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.5rem',
-                  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                  whiteSpace: 'nowrap'
-                }}
+                className={classNames(styles.tabBtn, {
+                  [styles.active]: activeTab === 'playing',
+                  [styles.activePlaying]: activeTab === 'playing'
+                })}
               >
                 <Play size={16} />
                 Playing ({groupedGames.playing.length})
               </button>
               <button
                 onClick={() => setActiveTab('pending')}
-                style={{
-                  padding: '0.65rem 1.25rem',
-                  background: activeTab === 'pending' ? 'var(--status-backlog)' : 'transparent',
-                  border: 'none',
-                  borderRadius: '10px',
-                  color: activeTab === 'pending' ? '#fff' : 'var(--text-secondary)',
-                  cursor: 'pointer',
-                  fontSize: '0.9rem',
-                  fontWeight: '500',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.5rem',
-                  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                  whiteSpace: 'nowrap'
-                }}
+                className={classNames(styles.tabBtn, {
+                  [styles.active]: activeTab === 'pending',
+                  [styles.activePending]: activeTab === 'pending'
+                })}
               >
                 <Bookmark size={16} />
                 Pending ({groupedGames.pending.length})
               </button>
               <button
                 onClick={() => setActiveTab('completion')}
-                style={{
-                  padding: '0.65rem 1.25rem',
-                  background: activeTab === 'completion' ? 'var(--status-finished)' : 'transparent',
-                  border: 'none',
-                  borderRadius: '10px',
-                  color: activeTab === 'completion' ? '#fff' : 'var(--text-secondary)',
-                  cursor: 'pointer',
-                  fontSize: '0.9rem',
-                  fontWeight: '500',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.5rem',
-                  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                  whiteSpace: 'nowrap'
-                }}
+                className={classNames(styles.tabBtn, {
+                  [styles.active]: activeTab === 'completion',
+                  [styles.activeCompletion]: activeTab === 'completion'
+                })}
               >
                 <CheckCircle size={16} />
                 Completion ({groupedGames.completion.length})
@@ -321,10 +260,7 @@ function App() {
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, scale: 0.95 }}
                       transition={{ duration: 0.3 }}
-                      style={{
-                        position: 'relative'
-                      }}
-                      className="game-item-wrapper"
+                      className={styles.gameItemWrapper}
                     >
                       <GameItem
                         game={game}
@@ -340,7 +276,7 @@ function App() {
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
-                    style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-secondary)' }}
+                    className={styles.emptyState}
                   >
                     该状态下暂无游戏
                   </motion.div>
@@ -349,19 +285,13 @@ function App() {
             </div>
 
             {games.length === 0 && (
-              <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-secondary)' }}>
-                没有找到游戏。请添加一些！
+              <div className={styles.emptyState}>
+                队列中暂无游戏
               </div>
             )}
           </div>
         )}
       </main>
-
-      {toast && (
-        <div className="toast">
-          {toast}
-        </div>
-      )}
 
       {showSteamSearch && (
         <SteamSearch
@@ -371,10 +301,21 @@ function App() {
       )}
 
       {showSettings && (
-        <Settings
-          onClose={handleSettingsClose}
-        />
+        <Settings onClose={handleSettingsClose} />
       )}
+
+      <AnimatePresence>
+        {toast && (
+          <motion.div
+            initial={{ opacity: 0, y: 50 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 20 }}
+            className={styles.toast}
+          >
+            {toast}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   )
 }

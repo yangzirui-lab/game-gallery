@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Plus } from "lucide-react";
+import styles from "./index.module.scss";
 
 interface AddGameProps {
   onAdd: (name: string, steamUrl?: string) => void;
@@ -19,23 +20,23 @@ export const AddGame: React.FC<AddGameProps> = ({ onAdd }) => {
   };
 
   return (
-    <div className="add-game-container">
-      <form className="add-game-form" onSubmit={handleSubmit}>
+    <div className={styles.addContainer}>
+      <form className={styles.addForm} onSubmit={handleSubmit}>
         <input
           type="text"
-          className="input-primary"
+          className={styles.inputPrimary}
           placeholder="Enter game name to add..."
           value={name}
           onChange={(e) => setName(e.target.value)}
         />
         <input
           type="text"
-          className="input-primary"
+          className={styles.inputPrimary}
           placeholder="Steam URL (可选)"
           value={steamUrl}
           onChange={(e) => setSteamUrl(e.target.value)}
         />
-        <button type="submit" className="btn-add">
+        <button type="submit" className={styles.btnAdd}>
           <Plus size={20} style={{ marginRight: '0.5rem', verticalAlign: 'middle' }} />
           Add Game
         </button>
