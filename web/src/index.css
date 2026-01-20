@@ -59,7 +59,7 @@ body {
 }
 
 .header h1 {
-  font-size: 1.5rem;
+  font-size: 2rem;
   font-weight: 700;
   background: linear-gradient(to right, #60a5fa, #a855f7);
   -webkit-background-clip: text;

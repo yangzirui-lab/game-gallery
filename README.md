@@ -1,6 +1,6 @@
-# Game Queue Manager (Git-backed)
+# GameGallery
 
-A modern web application to manage your Steam game backlog, using Git for version control of your data.
+A modern web application to manage your Steam game backlog, beautifully showcasing your game collection like an art gallery.
 
 ## Features
 

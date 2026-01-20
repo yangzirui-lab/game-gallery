@@ -186,7 +186,7 @@ function App() {
   return (
     <div className="app">
       <header className="header">
-        <h1>Game Queue</h1>
+        <h1>GameGallery</h1>
         <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
           <SearchBar value={searchTerm} onSearch={handleSearch} />
           <button
