@@ -117,7 +117,7 @@ function App() {
               totalReviews: reviews.totalReviews ?? game.totalReviews,
               releaseDate: releaseInfo.releaseDate ?? game.releaseDate,
               comingSoon: releaseInfo.comingSoon ?? game.comingSoon,
-              lastUpdated: new Date().toISOString()
+              // 不更新 lastUpdated，保持原有排序
             }
 
             // 更新本地状态

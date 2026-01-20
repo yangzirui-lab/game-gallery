@@ -180,6 +180,12 @@
     font-style: italic;
   }
 
+  .unreleased {
+    color: #94a3b8;
+    font-weight: 500;
+    font-size: 0.875rem;
+  }
+
   .releaseInfo {
     font-size: 0.75rem;
     color: var(--text-secondary);

@@ -90,8 +90,12 @@ export const GameItem: React.FC<GameItemProps> = ({ game, onUpdate, onDelete, is
               
               <div className={styles.gameMeta}>
                 <div className={styles.metaRow}>
-                  {game.positivePercentage !== undefined && game.positivePercentage !== null &&
-                   game.totalReviews !== undefined && game.totalReviews !== null ? (
+                  {game.comingSoon ? (
+                    <span className={styles.metaRating}>
+                      <span className={styles.unreleased}>尚未发售</span>
+                    </span>
+                  ) : game.positivePercentage !== undefined && game.positivePercentage !== null &&
+                         game.totalReviews !== undefined && game.totalReviews !== null ? (
                     <span className={styles.metaRating}>
                       <span className={classNames(styles.ratingPercentage, {
                         [styles.high]: game.positivePercentage >= 80,
@@ -111,7 +115,7 @@ export const GameItem: React.FC<GameItemProps> = ({ game, onUpdate, onDelete, is
                 {game.releaseDate && (
                   <div className={styles.releaseInfo}>
                     {game.comingSoon ? (
-                      <span className={styles.comingSoon}>{game.releaseDate}</span>
+                      <span className={styles.comingSoon}>预计发售: {game.releaseDate}</span>
                     ) : (
                       <span className={styles.releaseDate}>发布于 {game.releaseDate}</span>
                     )}
