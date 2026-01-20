@@ -66,7 +66,12 @@ export const GameItem: React.FC<GameItemProps> = ({ game, onUpdate, onDelete, is
       ref={itemRef}
       className={`game-card ${game.status === 'playing' ? 'playing' : ''} ${isHighlighted ? 'highlight' : ''}`}
       id={`game-${game.id}`}
-      style={{ display: 'flex', gap: '1rem', padding: '0' }}
+      style={{
+        display: 'flex',
+        padding: '0',
+        minHeight: '120px',
+        overflow: 'hidden'
+      }}
     >
       {game.coverImage ? (
         <img
@@ -75,7 +80,6 @@ export const GameItem: React.FC<GameItemProps> = ({ game, onUpdate, onDelete, is
           style={{
             width: '180px',
             minWidth: '180px',
-            height: '100%',
             objectFit: 'cover',
             borderRadius: '8px 0 0 8px',
           }}
@@ -88,7 +92,6 @@ export const GameItem: React.FC<GameItemProps> = ({ game, onUpdate, onDelete, is
           style={{
             width: '180px',
             minWidth: '180px',
-            height: '100%',
             background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
             borderRadius: '8px 0 0 8px',
             display: 'flex',
@@ -102,63 +105,92 @@ export const GameItem: React.FC<GameItemProps> = ({ game, onUpdate, onDelete, is
           {game.name.charAt(0).toUpperCase()}
         </div>
       )}
-      <div style={{ flex: 1, padding: '1rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-      <div className="game-header">
-        <input
-          className="game-name"
-          defaultValue={game.name}
-          onBlur={handleNameChange}
-          placeholder="Game Name"
-        />
-        <div className="game-actions">
-          <button
-            className="btn-steam"
-            onClick={handleSteamUrlClick}
-            title={game.steamUrl ? "Open Steam Page" : "Add Steam URL"}
+      <div style={{
+        flex: 1,
+        padding: '1rem 1.25rem',
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'space-between',
+        minWidth: 0
+      }}>
+        <div style={{
+          display: 'flex',
+          alignItems: 'flex-start',
+          justifyContent: 'space-between',
+          gap: '1rem'
+        }}>
+          <input
+            className="game-name"
+            defaultValue={game.name}
+            onBlur={handleNameChange}
+            placeholder="Game Name"
             style={{
-              color: game.steamUrl ? '#1b8dd4' : '#999',
-              background: 'none',
-              border: 'none',
-              cursor: 'pointer',
-              padding: '0.25rem 0.5rem'
+              flex: 1,
+              minWidth: 0
             }}
-          >
-            <ExternalLink size={16} />
-          </button>
-          <select
-            className="game-status-select"
-            value={game.status}
-            onChange={handleStatusChange}
-            style={{ color: `var(--status-${game.status})` }}
-          >
-            <option value="playing">Playing</option>
-            <option value="backlog">Backlog</option>
-            <option value="finished">Finished</option>
-            <option value="dropped">Dropped</option>
-          </select>
-          <button
-            className="btn-delete"
-            onClick={() => onDelete(game.id)}
-            title="Delete Game"
-          >
-            <Trash2 size={16} />
-          </button>
+          />
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.5rem',
+            flexShrink: 0
+          }}>
+            <button
+              className="btn-steam"
+              onClick={handleSteamUrlClick}
+              title={game.steamUrl ? "Open Steam Page" : "Add Steam URL"}
+              style={{
+                color: game.steamUrl ? '#1b8dd4' : '#999',
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                padding: '0.25rem 0.5rem'
+              }}
+            >
+              <ExternalLink size={16} />
+            </button>
+            <select
+              className="game-status-select"
+              value={game.status}
+              onChange={handleStatusChange}
+              style={{ color: `var(--status-${game.status})` }}
+            >
+              <option value="playing">Playing</option>
+              <option value="backlog">Backlog</option>
+              <option value="finished">Finished</option>
+              <option value="dropped">Dropped</option>
+            </select>
+            <button
+              className="btn-delete"
+              onClick={() => onDelete(game.id)}
+              title="Delete Game"
+            >
+              <Trash2 size={16} />
+            </button>
+          </div>
         </div>
-      </div>
-      <div className="game-meta">
-        <div className="meta-item">
-          <Calendar size={14} />
-          <span>Added: {format(new Date(game.addedAt), 'MMM dd, yyyy')}</span>
+
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '1.5rem',
+          fontSize: '0.85rem',
+          color: 'var(--text-secondary)',
+          flexWrap: 'wrap'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <Calendar size={14} />
+            <span>Added: {format(new Date(game.addedAt), 'MMM dd, yyyy')}</span>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <Clock size={14} />
+            <span>Updated: {format(new Date(game.lastUpdated), 'MMM dd, HH:mm')}</span>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginLeft: 'auto' }}>
+            {statusIcons[game.status]}
+            <span style={{ textTransform: 'capitalize' }}>{game.status}</span>
+          </div>
         </div>
-        <div className="meta-item">
-          <Clock size={14} />
-          <span>Updated: {format(new Date(game.lastUpdated), 'MMM dd, HH:mm')}</span>
-        </div>
-        <div className="meta-item" style={{ marginLeft: 'auto' }}>
-          {statusIcons[game.status]}
-          <span style={{ textTransform: 'capitalize' }}>{game.status}</span>
-        </div>
-      </div>
       {isEditingSteamUrl && (
         <div style={{ marginTop: '0.5rem', display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
           <input
