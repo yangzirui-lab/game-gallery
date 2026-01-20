@@ -5,7 +5,7 @@ import { steamService, type SteamGame } from "../../services/steam";
 import styles from "./index.module.scss";
 
 interface SteamSearchProps {
-  onAddGame: (name: string, steamUrl: string, coverImage: string, tags: string[], positivePercentage?: number, totalReviews?: number, releaseDate?: string, comingSoon?: boolean) => void;
+  onAddGame: (name: string, steamUrl: string, coverImage: string, tags: string[], positivePercentage?: number, totalReviews?: number, releaseDate?: string, comingSoon?: boolean, isEarlyAccess?: boolean) => void;
   onClose: () => void;
 }
 
@@ -32,7 +32,8 @@ export const SteamSearch: React.FC<SteamSearchProps> = ({ onAddGame, onClose }) 
                 positivePercentage: reviews.positivePercentage,
                 totalReviews: reviews.totalReviews,
                 releaseDate: releaseInfo.releaseDate,
-                comingSoon: releaseInfo.comingSoon
+                comingSoon: releaseInfo.comingSoon,
+                isEarlyAccess: releaseInfo.isEarlyAccess
               }
             : g
         )
@@ -90,7 +91,8 @@ export const SteamSearch: React.FC<SteamSearchProps> = ({ onAddGame, onClose }) 
       game.positivePercentage ?? undefined,
       game.totalReviews ?? undefined,
       game.releaseDate ?? undefined,
-      game.comingSoon ?? undefined
+      game.comingSoon ?? undefined,
+      game.isEarlyAccess ?? undefined
     );
     onClose();
   };

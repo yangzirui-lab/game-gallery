@@ -9,6 +9,7 @@ export interface SteamGame {
   averagePlaytime: number | null;
   releaseDate: string | null;
   comingSoon: boolean | null;
+  isEarlyAccess: boolean | null;
 }
 
 interface SteamSearchItem {
@@ -163,17 +164,21 @@ export class SteamService {
     return null;
   }
 
-  // 获取游戏发布日期
-  async getGameReleaseDate(appId: number): Promise<{ releaseDate: string | null; comingSoon: boolean | null }> {
+  // 获取游戏发布日期和抢先体验状态
+  async getGameReleaseDate(appId: number): Promise<{ releaseDate: string | null; comingSoon: boolean | null; isEarlyAccess: boolean | null }> {
     const details = await this.getGameDetails(appId)
 
-    if (!details?.release_date) {
-      return { releaseDate: null, comingSoon: null }
+    if (!details) {
+      return { releaseDate: null, comingSoon: null, isEarlyAccess: null }
     }
 
+    // 检查是否为抢先体验（category id = 29）
+    const isEarlyAccess = details.categories?.some(cat => cat.id === 29) || false
+
     return {
-      releaseDate: details.release_date.date || null,
-      comingSoon: details.release_date.coming_soon || null,
+      releaseDate: details.release_date?.date || null,
+      comingSoon: details.release_date?.coming_soon || null,
+      isEarlyAccess,
     }
   }
 

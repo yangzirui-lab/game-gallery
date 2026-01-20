@@ -12,6 +12,7 @@ export interface Game {
   totalReviews?: number;
   releaseDate?: string;
   comingSoon?: boolean;
+  isEarlyAccess?: boolean;
 }
 
 export interface GameQueueData {

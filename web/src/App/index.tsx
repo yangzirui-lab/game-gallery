@@ -102,18 +102,19 @@ function App() {
 
           const [reviews, releaseInfo] = await Promise.all([
             steamService.getGameReviews(appId),
-            needsReleaseDate ? steamService.getGameReleaseDate(appId) : Promise.resolve({ releaseDate: game.releaseDate, comingSoon: game.comingSoon })
+            needsReleaseDate ? steamService.getGameReleaseDate(appId) : Promise.resolve({ releaseDate: game.releaseDate, comingSoon: game.comingSoon, isEarlyAccess: game.isEarlyAccess })
           ])
 
           // 如果获取到了数据，或者数据有变化时更新
           const needsUpdate =
             (game.positivePercentage === null || game.positivePercentage === undefined) ||
             (game.releaseDate === null || game.releaseDate === undefined) ||
+            (game.isEarlyAccess === null || game.isEarlyAccess === undefined) ||
             (reviews.positivePercentage !== game.positivePercentage) ||
             (reviews.totalReviews !== game.totalReviews) ||
             (needsReleaseDate && releaseInfo.releaseDate !== game.releaseDate)
 
-          if (needsUpdate && (reviews.positivePercentage !== null || reviews.totalReviews !== null || releaseInfo.releaseDate !== null)) {
+          if (needsUpdate && (reviews.positivePercentage !== null || reviews.totalReviews !== null || releaseInfo.releaseDate !== null || releaseInfo.isEarlyAccess !== null)) {
             // 更新本地状态
             setGames(prevGames => {
               const updatedGames = prevGames.map(g => {
@@ -125,6 +126,7 @@ function App() {
                     totalReviews: reviews.totalReviews ?? g.totalReviews,
                     releaseDate: releaseInfo.releaseDate ?? g.releaseDate,
                     comingSoon: releaseInfo.comingSoon ?? g.comingSoon,
+                    isEarlyAccess: releaseInfo.isEarlyAccess ?? g.isEarlyAccess,
                     // 不更新 lastUpdated，保持原有排序
                   }
                 }
@@ -190,7 +192,7 @@ function App() {
     return { playing, pending, completion }
   }, [games, searchTerm])
 
-  const handleAddGameFromSteam = async (name: string, steamUrl: string, coverImage: string, _tags: string[], positivePercentage?: number, totalReviews?: number, releaseDate?: string, comingSoon?: boolean) => {
+  const handleAddGameFromSteam = async (name: string, steamUrl: string, coverImage: string, _tags: string[], positivePercentage?: number, totalReviews?: number, releaseDate?: string, comingSoon?: boolean, isEarlyAccess?: boolean) => {
     const existing = games.find(g => g.name.toLowerCase() === name.toLowerCase())
     if (existing) {
       setToast(`"${name}" 已经在队列中！`)
@@ -209,7 +211,8 @@ function App() {
       positivePercentage,
       totalReviews,
       releaseDate,
-      comingSoon
+      comingSoon,
+      isEarlyAccess
     }
 
     try {
@@ -227,7 +230,8 @@ function App() {
       // 如果没有好评率或发布日期数据，立即拉取
       if ((positivePercentage === undefined || positivePercentage === null) ||
           (totalReviews === undefined || totalReviews === null) ||
-          !newGame.releaseDate) {
+          !newGame.releaseDate ||
+          (isEarlyAccess === undefined || isEarlyAccess === null)) {
         const match = steamUrl.match(/\/app\/(\d+)/)
         if (match) {
           const appId = parseInt(match[1])
@@ -239,7 +243,7 @@ function App() {
               steamService.getGameReleaseDate(appId)
             ])
 
-            if (reviews.positivePercentage !== null || reviews.totalReviews !== null || releaseInfo.releaseDate !== null) {
+            if (reviews.positivePercentage !== null || reviews.totalReviews !== null || releaseInfo.releaseDate !== null || releaseInfo.isEarlyAccess !== null) {
               // 更新本地状态
               setGames(prevGames =>
                 prevGames.map(g => {
@@ -251,13 +255,14 @@ function App() {
                       totalReviews: reviews.totalReviews ?? totalReviews,
                       releaseDate: releaseInfo.releaseDate ?? g.releaseDate,
                       comingSoon: releaseInfo.comingSoon ?? g.comingSoon,
+                      isEarlyAccess: releaseInfo.isEarlyAccess ?? g.isEarlyAccess,
                     }
                   }
                   return g
                 })
               )
 
-              console.log(`已获取 ${name} 的信息: 好评率 ${reviews.positivePercentage}%, 发布日期 ${releaseInfo.releaseDate}`)
+              console.log(`已获取 ${name} 的信息: 好评率 ${reviews.positivePercentage}%, 发布日期 ${releaseInfo.releaseDate}, 抢先体验 ${releaseInfo.isEarlyAccess}`)
             }
           } catch (err) {
             console.error(`获取 ${name} 信息失败:`, err)

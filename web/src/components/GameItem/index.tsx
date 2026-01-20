@@ -127,6 +127,9 @@ export const GameItem: React.FC<GameItemProps> = ({ game, onUpdate, onDelete, is
                 >
                   {game.name}
                 </a>
+                {game.isEarlyAccess && (
+                  <span className={styles.earlyAccessBadge}>抢先体验</span>
+                )}
               </div>
               
               <div className={styles.gameMeta}>
