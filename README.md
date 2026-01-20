@@ -13,8 +13,6 @@ A modern web application to manage your Steam game backlog, using Git for versio
 2. Run `npm install`.
 3. Run `cd web`.
 4. Run `npm install`.
-5. Run `cd ..`.
-6. Run `npm run web`.
 
 ## Usage
 
