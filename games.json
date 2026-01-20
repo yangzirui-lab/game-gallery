@@ -1,6 +1,15 @@
 {
   "games": [
     {
+      "id": "1768894416477",
+      "name": "Counter-Strike 2",
+      "status": "backlog",
+      "addedAt": "2026-01-20T07:33:36.477Z",
+      "lastUpdated": "2026-01-20T07:33:36.477Z",
+      "steamUrl": "https://store.steampowered.com/app/730",
+      "coverImage": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/730/capsule_231x87_schinese.jpg?t=1749053861"
+    },
+    {
       "name": "幻兽帕鲁",
       "status": "finished",
       "tags": [],
@@ -37,8 +46,5 @@
       "addedAt": "2026-01-20T07:01:43.233Z",
       "lastUpdated": "2026-01-20T07:01:59.779Z"
     }
-  ],
-  "config": {
-    "autoCommit": true
-  }
+  ]
 }
