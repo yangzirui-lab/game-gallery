@@ -102,22 +102,37 @@ function App() {
 
           const [reviews, releaseInfo] = await Promise.all([
             steamService.getGameReviews(appId),
-            needsReleaseDate ? steamService.getGameReleaseDate(appId) : Promise.resolve({ releaseDate: game.releaseDate, comingSoon: game.comingSoon, isEarlyAccess: game.isEarlyAccess })
+            needsReleaseDate
+              ? steamService.getGameReleaseDate(appId)
+              : Promise.resolve({
+                  releaseDate: game.releaseDate,
+                  comingSoon: game.comingSoon,
+                  isEarlyAccess: game.isEarlyAccess,
+                }),
           ])
 
           // 如果获取到了数据，或者数据有变化时更新
           const needsUpdate =
-            (game.positivePercentage === null || game.positivePercentage === undefined) ||
-            (game.releaseDate === null || game.releaseDate === undefined) ||
-            (game.isEarlyAccess === null || game.isEarlyAccess === undefined) ||
-            (reviews.positivePercentage !== game.positivePercentage) ||
-            (reviews.totalReviews !== game.totalReviews) ||
+            game.positivePercentage === null ||
+            game.positivePercentage === undefined ||
+            game.releaseDate === null ||
+            game.releaseDate === undefined ||
+            game.isEarlyAccess === null ||
+            game.isEarlyAccess === undefined ||
+            reviews.positivePercentage !== game.positivePercentage ||
+            reviews.totalReviews !== game.totalReviews ||
             (needsReleaseDate && releaseInfo.releaseDate !== game.releaseDate)
 
-          if (needsUpdate && (reviews.positivePercentage !== null || reviews.totalReviews !== null || releaseInfo.releaseDate !== null || releaseInfo.isEarlyAccess !== null)) {
+          if (
+            needsUpdate &&
+            (reviews.positivePercentage !== null ||
+              reviews.totalReviews !== null ||
+              releaseInfo.releaseDate !== null ||
+              releaseInfo.isEarlyAccess !== null)
+          ) {
             // 更新本地状态
-            setGames(prevGames => {
-              const updatedGames = prevGames.map(g => {
+            setGames((prevGames) => {
+              const updatedGames = prevGames.map((g) => {
                 if (g.id === game.id) {
                   // 使用最新的游戏状态，只更新好评率相关字段
                   return {
@@ -135,27 +150,29 @@ function App() {
 
               // 如果获取到了新的发布日期，保存到 GitHub
               if (needsReleaseDate && releaseInfo.releaseDate) {
-                githubService.updateGames(
-                  { games: updatedGames },
-                  `Update game info: ${game.name}`
-                ).then(() => {
-                  console.log(`已保存 ${game.name} 的发布日期到 GitHub`)
-                }).catch((err) => {
-                  console.error(`保存 ${game.name} 发布日期失败:`, err)
-                })
+                githubService
+                  .updateGames({ games: updatedGames }, `Update game info: ${game.name}`)
+                  .then(() => {
+                    console.log(`已保存 ${game.name} 的发布日期到 GitHub`)
+                  })
+                  .catch((err) => {
+                    console.error(`保存 ${game.name} 发布日期失败:`, err)
+                  })
               }
 
               return updatedGames
             })
 
-            console.log(`已更新 ${game.name} 的信息: 好评率 ${reviews.positivePercentage}%, 发布日期 ${releaseInfo.releaseDate}`)
+            console.log(
+              `已更新 ${game.name} 的信息: 好评率 ${reviews.positivePercentage}%, 发布日期 ${releaseInfo.releaseDate}`
+            )
           }
         } catch (err) {
           console.error(`刷新 ${game.name} 信息失败:`, err)
         }
 
         // 添加延迟避免请求过快
-        await new Promise(resolve => setTimeout(resolve, 1000))
+        await new Promise((resolve) => setTimeout(resolve, 1000))
       }
 
       console.log('好评率刷新完成')
@@ -176,24 +193,34 @@ function App() {
   // Group games by status
   const groupedGames = useMemo(() => {
     const filtered = searchTerm
-      ? games.filter(g => g.name.toLowerCase().includes(searchTerm.toLowerCase()))
+      ? games.filter((g) => g.name.toLowerCase().includes(searchTerm.toLowerCase()))
       : games
 
-    const playing = filtered.filter(g => g.status === 'playing').sort((a, b) =>
-      new Date(b.lastUpdated).getTime() - new Date(a.lastUpdated).getTime()
-    )
-    const pending = filtered.filter(g => g.status === 'pending').sort((a, b) =>
-      new Date(b.lastUpdated).getTime() - new Date(a.lastUpdated).getTime()
-    )
-    const completion = filtered.filter(g => g.status === 'completion').sort((a, b) =>
-      new Date(b.lastUpdated).getTime() - new Date(a.lastUpdated).getTime()
-    )
+    const playing = filtered
+      .filter((g) => g.status === 'playing')
+      .sort((a, b) => new Date(b.lastUpdated).getTime() - new Date(a.lastUpdated).getTime())
+    const pending = filtered
+      .filter((g) => g.status === 'pending')
+      .sort((a, b) => new Date(b.lastUpdated).getTime() - new Date(a.lastUpdated).getTime())
+    const completion = filtered
+      .filter((g) => g.status === 'completion')
+      .sort((a, b) => new Date(b.lastUpdated).getTime() - new Date(a.lastUpdated).getTime())
 
     return { playing, pending, completion }
   }, [games, searchTerm])
 
-  const handleAddGameFromSteam = async (name: string, steamUrl: string, coverImage: string, _tags: string[], positivePercentage?: number, totalReviews?: number, releaseDate?: string, comingSoon?: boolean, isEarlyAccess?: boolean) => {
-    const existing = games.find(g => g.name.toLowerCase() === name.toLowerCase())
+  const handleAddGameFromSteam = async (
+    name: string,
+    steamUrl: string,
+    coverImage: string,
+    _tags: string[],
+    positivePercentage?: number,
+    totalReviews?: number,
+    releaseDate?: string,
+    comingSoon?: boolean,
+    isEarlyAccess?: boolean
+  ) => {
+    const existing = games.find((g) => g.name.toLowerCase() === name.toLowerCase())
     if (existing) {
       setToast(`"${name}" 已经在队列中！`)
       setHighlightId(existing.id)
@@ -212,7 +239,7 @@ function App() {
       totalReviews,
       releaseDate,
       comingSoon,
-      isEarlyAccess
+      isEarlyAccess,
     }
 
     try {
@@ -228,10 +255,15 @@ function App() {
       setHighlightId(newGame.id)
 
       // 如果没有好评率或发布日期数据，立即拉取
-      if ((positivePercentage === undefined || positivePercentage === null) ||
-          (totalReviews === undefined || totalReviews === null) ||
-          !newGame.releaseDate ||
-          (isEarlyAccess === undefined || isEarlyAccess === null)) {
+      if (
+        positivePercentage === undefined ||
+        positivePercentage === null ||
+        totalReviews === undefined ||
+        totalReviews === null ||
+        !newGame.releaseDate ||
+        isEarlyAccess === undefined ||
+        isEarlyAccess === null
+      ) {
         const match = steamUrl.match(/\/app\/(\d+)/)
         if (match) {
           const appId = parseInt(match[1])
@@ -240,13 +272,18 @@ function App() {
           try {
             const [reviews, releaseInfo] = await Promise.all([
               steamService.getGameReviews(appId),
-              steamService.getGameReleaseDate(appId)
+              steamService.getGameReleaseDate(appId),
             ])
 
-            if (reviews.positivePercentage !== null || reviews.totalReviews !== null || releaseInfo.releaseDate !== null || releaseInfo.isEarlyAccess !== null) {
+            if (
+              reviews.positivePercentage !== null ||
+              reviews.totalReviews !== null ||
+              releaseInfo.releaseDate !== null ||
+              releaseInfo.isEarlyAccess !== null
+            ) {
               // 更新本地状态
-              setGames(prevGames =>
-                prevGames.map(g => {
+              setGames((prevGames) =>
+                prevGames.map((g) => {
                   if (g.id === newGame.id) {
                     // 使用最新的游戏状态，只更新好评率相关字段
                     return {
@@ -262,7 +299,9 @@ function App() {
                 })
               )
 
-              console.log(`已获取 ${name} 的信息: 好评率 ${reviews.positivePercentage}%, 发布日期 ${releaseInfo.releaseDate}, 抢先体验 ${releaseInfo.isEarlyAccess}`)
+              console.log(
+                `已获取 ${name} 的信息: 好评率 ${reviews.positivePercentage}%, 发布日期 ${releaseInfo.releaseDate}, 抢先体验 ${releaseInfo.isEarlyAccess}`
+              )
             }
           } catch (err) {
             console.error(`获取 ${name} 信息失败:`, err)
@@ -277,23 +316,20 @@ function App() {
   }
 
   const handleUpdateGame = async (id: string, updates: Partial<Game>) => {
-    const game = games.find(g => g.id === id)
+    const game = games.find((g) => g.id === id)
     if (!game) return
 
     const updatedGame: Game = {
       ...game,
       ...updates,
-      lastUpdated: new Date().toISOString()
+      lastUpdated: new Date().toISOString(),
     }
 
     try {
-      const updatedGames = games.map(g => g.id === id ? updatedGame : g)
+      const updatedGames = games.map((g) => (g.id === id ? updatedGame : g))
       setGames(updatedGames)
 
-      await githubService.updateGames(
-        { games: updatedGames },
-        `Update game via web: ${game.name}`
-      )
+      await githubService.updateGames({ games: updatedGames }, `Update game via web: ${game.name}`)
     } catch (err) {
       console.error('Failed to update game:', err)
       setToast('更新游戏失败')
@@ -302,12 +338,12 @@ function App() {
   }
 
   const handleDeleteGame = async (id: string) => {
-    const game = games.find(g => g.id === id)
+    const game = games.find((g) => g.id === id)
     if (!game) return
 
     if (window.confirm(`确定要删除 "${game.name}"?`)) {
       try {
-        const updatedGames = games.filter(g => g.id !== id)
+        const updatedGames = games.filter((g) => g.id !== id)
         setGames(updatedGames)
 
         await githubService.updateGames(
@@ -327,7 +363,7 @@ function App() {
   const handleSearch = (term: string) => {
     setSearchTerm(term)
     if (term) {
-      const match = games.find(g => g.name.toLowerCase().includes(term.toLowerCase()))
+      const match = games.find((g) => g.name.toLowerCase().includes(term.toLowerCase()))
       if (match) {
         setHighlightId(match.id)
       }
@@ -338,9 +374,10 @@ function App() {
     setShowSettings(false)
     // 重新加载游戏数据（如果配置已更新）
     if (githubService.isConfigured()) {
-      githubService.fetchGames()
-        .then(data => setGames(data.games))
-        .catch(err => console.error('Failed to reload games:', err))
+      githubService
+        .fetchGames()
+        .then((data) => setGames(data.games))
+        .catch((err) => console.error('Failed to reload games:', err))
     }
   }
 
@@ -350,16 +387,10 @@ function App() {
         <h1>GameGallery</h1>
         <div className={styles.headerActions}>
           <SearchBar value={searchTerm} onSearch={handleSearch} />
-          <button
-            onClick={() => setShowSteamSearch(true)}
-            className={styles.btnSteam}
-          >
+          <button onClick={() => setShowSteamSearch(true)} className={styles.btnSteam}>
             从 Steam 添加
           </button>
-          <button
-            onClick={() => setShowSettings(true)}
-            className={styles.btnSettings}
-          >
+          <button onClick={() => setShowSettings(true)} className={styles.btnSettings}>
             <SettingsIcon size={18} />
             设置
           </button>
@@ -380,7 +411,7 @@ function App() {
                 onClick={() => setActiveTab('playing')}
                 className={classNames(styles.tabBtn, {
                   [styles.active]: activeTab === 'playing',
-                  [styles.activePlaying]: activeTab === 'playing'
+                  [styles.activePlaying]: activeTab === 'playing',
                 })}
               >
                 <Play size={16} />
@@ -390,7 +421,7 @@ function App() {
                 onClick={() => setActiveTab('pending')}
                 className={classNames(styles.tabBtn, {
                   [styles.active]: activeTab === 'pending',
-                  [styles.activePending]: activeTab === 'pending'
+                  [styles.activePending]: activeTab === 'pending',
                 })}
               >
                 <Bookmark size={16} />
@@ -400,7 +431,7 @@ function App() {
                 onClick={() => setActiveTab('completion')}
                 className={classNames(styles.tabBtn, {
                   [styles.active]: activeTab === 'completion',
-                  [styles.activeCompletion]: activeTab === 'completion'
+                  [styles.activeCompletion]: activeTab === 'completion',
                 })}
               >
                 <CheckCircle size={16} />
@@ -412,7 +443,7 @@ function App() {
             <div className={styles.gameList}>
               <AnimatePresence mode="wait">
                 {groupedGames[activeTab].length > 0 ? (
-                  groupedGames[activeTab].map(game => (
+                  groupedGames[activeTab].map((game) => (
                     <motion.div
                       key={game.id}
                       initial={{ opacity: 0, y: 20 }}
@@ -444,25 +475,16 @@ function App() {
               </AnimatePresence>
             </div>
 
-            {games.length === 0 && (
-              <div className={styles.emptyState}>
-                队列中暂无游戏
-              </div>
-            )}
+            {games.length === 0 && <div className={styles.emptyState}>队列中暂无游戏</div>}
           </div>
         )}
       </main>
 
       {showSteamSearch && (
-        <SteamSearch
-          onAddGame={handleAddGameFromSteam}
-          onClose={() => setShowSteamSearch(false)}
-        />
+        <SteamSearch onAddGame={handleAddGameFromSteam} onClose={() => setShowSteamSearch(false)} />
       )}
 
-      {showSettings && (
-        <Settings onClose={handleSettingsClose} />
-      )}
+      {showSettings && <Settings onClose={handleSettingsClose} />}
 
       <AnimatePresence>
         {toast && (

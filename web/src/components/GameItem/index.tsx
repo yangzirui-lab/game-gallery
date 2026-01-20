@@ -1,85 +1,91 @@
-import React, { useRef, useEffect, useState } from "react";
-import classNames from "classnames";
-import type { Game, GameStatus } from "../../types";
-import { Trash2 } from "lucide-react";
-import styles from "./index.module.scss";
+import React, { useRef, useEffect, useState } from 'react'
+import classNames from 'classnames'
+import type { Game, GameStatus } from '../../types'
+import { Trash2 } from 'lucide-react'
+import styles from './index.module.scss'
 
 interface GameItemProps {
-  game: Game;
-  onUpdate: (id: string, updates: Partial<Game>) => void;
-  onDelete: (id: string) => void;
-  isHighlighted: boolean;
-  onShowToast?: (message: string) => void;
+  game: Game
+  onUpdate: (id: string, updates: Partial<Game>) => void
+  onDelete: (id: string) => void
+  isHighlighted: boolean
+  onShowToast?: (message: string) => void
 }
 
-export const GameItem: React.FC<GameItemProps> = ({ game, onUpdate, onDelete, isHighlighted, onShowToast }) => {
-  const itemRef = useRef<HTMLDivElement>(null);
-  const [isEditingSteamUrl, setIsEditingSteamUrl] = useState(false);
-  const [steamUrlInput, setSteamUrlInput] = useState(game.steamUrl || "");
-  const [coverError, setCoverError] = useState(false);
+export const GameItem: React.FC<GameItemProps> = ({
+  game,
+  onUpdate,
+  onDelete,
+  isHighlighted,
+  onShowToast,
+}) => {
+  const itemRef = useRef<HTMLDivElement>(null)
+  const [isEditingSteamUrl, setIsEditingSteamUrl] = useState(false)
+  const [steamUrlInput, setSteamUrlInput] = useState(game.steamUrl || '')
+  const [coverError, setCoverError] = useState(false)
 
   useEffect(() => {
     if (isHighlighted && itemRef.current) {
-      itemRef.current.scrollIntoView({ behavior: "smooth", block: "center" });
+      itemRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' })
     }
-  }, [isHighlighted]);
+  }, [isHighlighted])
 
   const handleStatusChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     onUpdate(game.id, {
       status: e.target.value as GameStatus,
-      lastUpdated: new Date().toISOString()
-    });
-  };
+      lastUpdated: new Date().toISOString(),
+    })
+  }
 
   const handleSteamUrlSave = () => {
     if (steamUrlInput.trim()) {
-      onUpdate(game.id, { steamUrl: steamUrlInput.trim() });
+      onUpdate(game.id, { steamUrl: steamUrlInput.trim() })
     }
-    setIsEditingSteamUrl(false);
-  };
+    setIsEditingSteamUrl(false)
+  }
 
   const handleSteamUrlCancel = () => {
-    setSteamUrlInput(game.steamUrl || "");
-    setIsEditingSteamUrl(false);
-  };
+    setSteamUrlInput(game.steamUrl || '')
+    setIsEditingSteamUrl(false)
+  }
 
   const handleGameNameClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
-    e.preventDefault();
+    e.preventDefault()
 
     if (!game.steamUrl) {
-      setIsEditingSteamUrl(true);
-      return;
+      setIsEditingSteamUrl(true)
+      return
     }
 
-    const match = game.steamUrl.match(/\/app\/(\d+)/);
-    if (!match) return;
+    const match = game.steamUrl.match(/\/app\/(\d+)/)
+    if (!match) return
 
-    const appId = match[1];
-    const steamProtocolUrl = `steam://store/${appId}`;
-    const webUrl = game.steamUrl;
+    const appId = match[1]
+    const steamProtocolUrl = `steam://store/${appId}`
+    const webUrl = game.steamUrl
 
     // 尝试打开Steam客户端
-    window.location.href = steamProtocolUrl;
+    window.location.href = steamProtocolUrl
 
     // 检测Steam客户端是否打开
-    let blurred = false;
+    let blurred = false
     const onBlur = () => {
-      blurred = true;
-    };
+      blurred = true
+    }
 
-    window.addEventListener('blur', onBlur);
+    window.addEventListener('blur', onBlur)
 
     // 2秒后检查，如果Steam未打开则降级到网页
     setTimeout(() => {
-      window.removeEventListener('blur', onBlur);
+      window.removeEventListener('blur', onBlur)
 
       if (!blurred) {
         // Steam客户端未安装，打开网页版
-        window.open(webUrl, '_blank', 'noopener,noreferrer');
-        onShowToast?.('未检测到Steam客户端，建议安装以获得更好体验');
+        window.open(webUrl, '_blank', 'noopener,noreferrer')
+        onShowToast?.('未检测到Steam客户端，建议安装以获得更好体验')
       }
-    }, 2000);
-  };
+    }, 2000)
+  }
 
   return (
     <div
@@ -99,53 +105,50 @@ export const GameItem: React.FC<GameItemProps> = ({ game, onUpdate, onDelete, is
       </button>
 
       <div className={styles.gameWrapper}>
-        <div className={styles.gameCoverContainer}> 
+        <div className={styles.gameCoverContainer}>
           {game.coverImage && !coverError ? (
             <img
               src={game.coverImage}
               alt={game.name}
               className={styles.gameCover}
               onError={() => {
-                setCoverError(true);
+                setCoverError(true)
               }}
               onLoad={() => setCoverError(false)}
             />
           ) : (
-            <div className={styles.gameCoverPlaceholder}>
-              {game.name.charAt(0).toUpperCase()}
-            </div>
+            <div className={styles.gameCoverPlaceholder}>{game.name.charAt(0).toUpperCase()}</div>
           )}
         </div>
         <div className={styles.gameContent}>
           <div className={styles.gameHeader}>
             <div className={styles.gameTitleArea}>
               <div className={styles.gameTitleRow}>
-                <a
-                  href="#"
-                  onClick={handleGameNameClick}
-                  className={styles.gameNameLink}
-                >
+                <a href="#" onClick={handleGameNameClick} className={styles.gameNameLink}>
                   {game.name}
                 </a>
-                {game.isEarlyAccess && (
-                  <span className={styles.earlyAccessBadge}>抢先体验</span>
-                )}
+                {game.isEarlyAccess && <span className={styles.earlyAccessBadge}>抢先体验</span>}
               </div>
-              
+
               <div className={styles.gameMeta}>
                 <div className={styles.metaRow}>
                   {game.comingSoon ? (
                     <span className={styles.metaRating}>
                       <span className={styles.unreleased}>尚未发售</span>
                     </span>
-                  ) : game.positivePercentage !== undefined && game.positivePercentage !== null &&
-                         game.totalReviews !== undefined && game.totalReviews !== null ? (
+                  ) : game.positivePercentage !== undefined &&
+                    game.positivePercentage !== null &&
+                    game.totalReviews !== undefined &&
+                    game.totalReviews !== null ? (
                     <span className={styles.metaRating}>
-                      <span className={classNames(styles.ratingPercentage, {
-                        [styles.high]: game.positivePercentage >= 80,
-                        [styles.medium]: game.positivePercentage >= 60 && game.positivePercentage < 80,
-                        [styles.low]: game.positivePercentage < 60
-                      })}>
+                      <span
+                        className={classNames(styles.ratingPercentage, {
+                          [styles.high]: game.positivePercentage >= 80,
+                          [styles.medium]:
+                            game.positivePercentage >= 60 && game.positivePercentage < 80,
+                          [styles.low]: game.positivePercentage < 60,
+                        })}
+                      >
                         {game.positivePercentage}% 好评
                       </span>
                       <span className={styles.reviewCount}>
@@ -173,7 +176,7 @@ export const GameItem: React.FC<GameItemProps> = ({ game, onUpdate, onDelete, is
                 value={game.status}
                 onChange={handleStatusChange}
                 style={{
-                  color: `var(--status-${game.status})`
+                  color: `var(--status-${game.status})`,
                 }}
               >
                 <option value="playing">Playing</option>
@@ -183,36 +186,30 @@ export const GameItem: React.FC<GameItemProps> = ({ game, onUpdate, onDelete, is
             </div>
           </div>
 
-        {isEditingSteamUrl && (
-          <div className={styles.steamUrlEditRow}>
-            <input
-              type="text"
-              className={styles.inputPrimary}
-              placeholder="Enter Steam URL..."
-              value={steamUrlInput}
-              onChange={(e) => setSteamUrlInput(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') handleSteamUrlSave();
-                if (e.key === 'Escape') handleSteamUrlCancel();
-              }}
-              autoFocus
-            />
-            <button
-              onClick={handleSteamUrlSave}
-              className={styles.btnSave}
-            >
-              Save
-            </button>
-            <button
-              onClick={handleSteamUrlCancel}
-              className={styles.btnCancel}
-            >
-              Cancel
-            </button>
-          </div>
-        )}
+          {isEditingSteamUrl && (
+            <div className={styles.steamUrlEditRow}>
+              <input
+                type="text"
+                className={styles.inputPrimary}
+                placeholder="Enter Steam URL..."
+                value={steamUrlInput}
+                onChange={(e) => setSteamUrlInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') handleSteamUrlSave()
+                  if (e.key === 'Escape') handleSteamUrlCancel()
+                }}
+                autoFocus
+              />
+              <button onClick={handleSteamUrlSave} className={styles.btnSave}>
+                Save
+              </button>
+              <button onClick={handleSteamUrlCancel} className={styles.btnCancel}>
+                Cancel
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </div>
-  );
-};
+  )
+}

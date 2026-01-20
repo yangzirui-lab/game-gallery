@@ -14,7 +14,7 @@
   --status-dropped: #ef4444;
 
   font-family:
-    "Inter",
+    'Inter',
     system-ui,
     -apple-system,
     sans-serif;
@@ -50,8 +50,12 @@ body {
 }
 
 @keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 /* 优化原生 select 下拉框样式 */
@@ -74,4 +78,3 @@ select option:focus {
   background-color: #475569;
   color: #fff;
 }
-

@@ -1,101 +1,105 @@
-import React, { useState, useEffect } from 'react';
-import { X, Save, CheckCircle, XCircle, Loader2 } from 'lucide-react';
-import { githubService } from '../../services/github';
-import styles from './index.module.scss';
+import React, { useState, useEffect } from 'react'
+import { X, Save, CheckCircle, XCircle, Loader2 } from 'lucide-react'
+import { githubService } from '../../services/github'
+import styles from './index.module.scss'
 
 interface SettingsProps {
-  onClose: () => void;
+  onClose: () => void
 }
 
 export const Settings: React.FC<SettingsProps> = ({ onClose }) => {
-  const [token, setToken] = useState('');
-  const [isSaving, setIsSaving] = useState(false);
-  const [isTesting, setIsTesting] = useState(false);
-  const [testStatus, setTestStatus] = useState<'idle' | 'success' | 'error'>('idle');
-  const [errorMessage, setErrorMessage] = useState('');
+  const [token, setToken] = useState('')
+  const [isSaving, setIsSaving] = useState(false)
+  const [isTesting, setIsTesting] = useState(false)
+  const [testStatus, setTestStatus] = useState<'idle' | 'success' | 'error'>('idle')
+  const [errorMessage, setErrorMessage] = useState('')
 
-  const FIXED_OWNER = 'yangzirui-lab';
-  const FIXED_REPO = 'game-queue';
+  const FIXED_OWNER = 'yangzirui-lab'
+  const FIXED_REPO = 'game-queue'
 
   useEffect(() => {
-    const config = githubService.getConfig();
+    const config = githubService.getConfig()
     if (config) {
-      setToken(config.token);
+      setToken(config.token)
       // 强制更新为正确的owner和repo
       if (config.owner !== FIXED_OWNER || config.repo !== FIXED_REPO) {
-        githubService.saveConfig({ token: config.token, owner: FIXED_OWNER, repo: FIXED_REPO });
+        githubService.saveConfig({ token: config.token, owner: FIXED_OWNER, repo: FIXED_REPO })
       }
     }
-  }, []);
+  }, [])
 
   const handleTest = async () => {
     if (!token) {
-      setErrorMessage('请填写 GitHub Token');
-      setTestStatus('error');
-      return;
+      setErrorMessage('请填写 GitHub Token')
+      setTestStatus('error')
+      return
     }
 
-    setIsTesting(true);
-    setTestStatus('idle');
-    setErrorMessage('');
+    setIsTesting(true)
+    setTestStatus('idle')
+    setErrorMessage('')
 
     try {
       // 使用写死的用户名
-      const tempConfig = { token, owner: FIXED_OWNER, repo: FIXED_REPO };
-      githubService.saveConfig(tempConfig);
+      const tempConfig = { token, owner: FIXED_OWNER, repo: FIXED_REPO }
+      githubService.saveConfig(tempConfig)
 
-      const success = await githubService.testConnection();
+      const success = await githubService.testConnection()
       if (success) {
-        setTestStatus('success');
+        setTestStatus('success')
       } else {
-        setTestStatus('error');
-        setErrorMessage(`连接失败。仓库 ${FIXED_OWNER}/${FIXED_REPO} 不存在或无法访问。请检查 Token 权限。`);
+        setTestStatus('error')
+        setErrorMessage(
+          `连接失败。仓库 ${FIXED_OWNER}/${FIXED_REPO} 不存在或无法访问。请检查 Token 权限。`
+        )
       }
     } catch (error) {
-      setTestStatus('error');
-      setErrorMessage(error instanceof Error ? error.message : '连接测试失败');
+      setTestStatus('error')
+      setErrorMessage(error instanceof Error ? error.message : '连接测试失败')
     } finally {
-      setIsTesting(false);
+      setIsTesting(false)
     }
-  };
+  }
 
   const handleSave = async () => {
     if (!token) {
-      setErrorMessage('请填写 GitHub Token');
-      return;
+      setErrorMessage('请填写 GitHub Token')
+      return
     }
 
-    setIsSaving(true);
-    setErrorMessage('');
+    setIsSaving(true)
+    setErrorMessage('')
 
     try {
       // 使用写死的用户名
-      githubService.saveConfig({ token, owner: FIXED_OWNER, repo: FIXED_REPO });
+      githubService.saveConfig({ token, owner: FIXED_OWNER, repo: FIXED_REPO })
 
       // 测试连接
-      const success = await githubService.testConnection();
+      const success = await githubService.testConnection()
       if (success) {
-        setTestStatus('success');
+        setTestStatus('success')
         setTimeout(() => {
-          onClose();
-        }, 1000);
+          onClose()
+        }, 1000)
       } else {
-        setErrorMessage(`配置已保存，但仓库 ${FIXED_OWNER}/${FIXED_REPO} 不存在或无法访问。请检查 Token 权限。`);
-        setTestStatus('error');
+        setErrorMessage(
+          `配置已保存，但仓库 ${FIXED_OWNER}/${FIXED_REPO} 不存在或无法访问。请检查 Token 权限。`
+        )
+        setTestStatus('error')
       }
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : '保存失败');
-      setTestStatus('error');
+      setErrorMessage(error instanceof Error ? error.message : '保存失败')
+      setTestStatus('error')
     } finally {
-      setIsSaving(false);
+      setIsSaving(false)
     }
-  };
+  }
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Escape') {
-      onClose();
+      onClose()
     }
-  };
+  }
 
   return (
     <div className={styles.overlay}>
@@ -108,9 +112,7 @@ export const Settings: React.FC<SettingsProps> = ({ onClose }) => {
 
         <div className={styles.form}>
           <div>
-            <label className={styles.label}>
-              GitHub Token
-            </label>
+            <label className={styles.label}>GitHub Token</label>
             <input
               type="password"
               className={styles.inputPrimary}
@@ -132,11 +134,7 @@ export const Settings: React.FC<SettingsProps> = ({ onClose }) => {
             </div>
           </div>
 
-          {errorMessage && (
-            <div className={styles.errorBox}>
-              {errorMessage}
-            </div>
-          )}
+          {errorMessage && <div className={styles.errorBox}>{errorMessage}</div>}
 
           {testStatus === 'success' && (
             <div className={styles.successBox}>
@@ -146,11 +144,7 @@ export const Settings: React.FC<SettingsProps> = ({ onClose }) => {
           )}
 
           <div className={styles.actions}>
-            <button
-              onClick={handleTest}
-              disabled={isTesting || !token}
-              className={styles.btnTest}
-            >
+            <button onClick={handleTest} disabled={isTesting || !token} className={styles.btnTest}>
               {isTesting ? (
                 <>
                   <Loader2 className="animate-spin" size={18} />
@@ -166,11 +160,7 @@ export const Settings: React.FC<SettingsProps> = ({ onClose }) => {
               )}
             </button>
 
-            <button
-              onClick={handleSave}
-              disabled={isSaving || !token}
-              className={styles.btnSave}
-            >
+            <button onClick={handleSave} disabled={isSaving || !token} className={styles.btnSave}>
               {isSaving ? (
                 <>
                   <Loader2 className="animate-spin" size={18} />
@@ -188,14 +178,20 @@ export const Settings: React.FC<SettingsProps> = ({ onClose }) => {
           <div className={styles.instructions}>
             <strong>配置步骤：</strong>
             <ul>
-              <li>创建一个 GitHub Personal Access Token（需要 <code>repo</code> 权限）</li>
-              <li>游戏数据将保存到 <code>yangzirui-lab/game-queue</code> 仓库</li>
+              <li>
+                创建一个 GitHub Personal Access Token（需要 <code>repo</code> 权限）
+              </li>
+              <li>
+                游戏数据将保存到 <code>yangzirui-lab/game-queue</code> 仓库
+              </li>
               <li>点击"测试连接"验证配置是否正确</li>
-              <li>如果仓库不存在，需要先在 GitHub 创建 <code>game-queue</code> 仓库</li>
+              <li>
+                如果仓库不存在，需要先在 GitHub 创建 <code>game-queue</code> 仓库
+              </li>
             </ul>
           </div>
         </div>
       </div>
     </div>
-  );
-};
+  )
+}

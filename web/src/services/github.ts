@@ -1,137 +1,137 @@
-import type { GameQueueData } from '../types';
+import type { GameQueueData } from '../types'
 
 interface GitHubConfig {
-  token: string;
-  owner: string;
-  repo: string;
+  token: string
+  owner: string
+  repo: string
 }
 
-const STORAGE_KEY = 'github_config';
-const FILE_PATH = 'games.json';
+const STORAGE_KEY = 'github_config'
+const FILE_PATH = 'games.json'
 
 export class GitHubService {
-  private config: GitHubConfig | null = null;
+  private config: GitHubConfig | null = null
 
   constructor() {
-    this.loadConfig();
+    this.loadConfig()
   }
 
   loadConfig(): GitHubConfig | null {
     try {
-      const stored = localStorage.getItem(STORAGE_KEY);
+      const stored = localStorage.getItem(STORAGE_KEY)
       if (stored) {
-        this.config = JSON.parse(stored);
+        this.config = JSON.parse(stored)
         // 强制修正为正确的owner和repo
-        if (this.config && (this.config.owner !== 'yangzirui-lab' || this.config.repo !== 'game-queue')) {
-          this.config.owner = 'yangzirui-lab';
-          this.config.repo = 'game-queue';
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(this.config));
+        if (
+          this.config &&
+          (this.config.owner !== 'yangzirui-lab' || this.config.repo !== 'game-queue')
+        ) {
+          this.config.owner = 'yangzirui-lab'
+          this.config.repo = 'game-queue'
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(this.config))
         }
       }
-      return this.config;
+      return this.config
     } catch (error) {
-      console.error('Failed to load GitHub config:', error);
-      return null;
+      console.error('Failed to load GitHub config:', error)
+      return null
     }
   }
 
   saveConfig(config: GitHubConfig): void {
-    this.config = config;
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(config));
+    this.config = config
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(config))
   }
 
   clearConfig(): void {
-    this.config = null;
-    localStorage.removeItem(STORAGE_KEY);
+    this.config = null
+    localStorage.removeItem(STORAGE_KEY)
   }
 
   isConfigured(): boolean {
-    return this.config !== null &&
-           !!this.config.token &&
-           !!this.config.owner &&
-           !!this.config.repo;
+    return this.config !== null && !!this.config.token && !!this.config.owner && !!this.config.repo
   }
 
   getConfig(): GitHubConfig | null {
-    return this.config;
+    return this.config
   }
 
   private getApiUrl(path: string = ''): string {
     if (!this.config) {
-      throw new Error('GitHub not configured');
+      throw new Error('GitHub not configured')
     }
-    return `https://api.github.com/repos/${this.config.owner}/${this.config.repo}/contents/${path}`;
+    return `https://api.github.com/repos/${this.config.owner}/${this.config.repo}/contents/${path}`
   }
 
   private getHeaders(): HeadersInit {
     if (!this.config) {
-      throw new Error('GitHub not configured');
+      throw new Error('GitHub not configured')
     }
     return {
-      'Authorization': `Bearer ${this.config.token}`,
-      'Accept': 'application/vnd.github.v3+json',
+      Authorization: `Bearer ${this.config.token}`,
+      Accept: 'application/vnd.github.v3+json',
       'Content-Type': 'application/json',
-    };
+    }
   }
 
   async fetchGames(): Promise<GameQueueData> {
     if (!this.isConfigured()) {
-      throw new Error('GitHub not configured. Please configure in Settings.');
+      throw new Error('GitHub not configured. Please configure in Settings.')
     }
 
     try {
       const response = await fetch(this.getApiUrl(FILE_PATH), {
         headers: this.getHeaders(),
-      });
+      })
 
       if (response.status === 404) {
         // File doesn't exist yet, return empty data
-        return { games: [] };
+        return { games: [] }
       }
 
       if (!response.ok) {
-        throw new Error(`GitHub API error: ${response.status} ${response.statusText}`);
+        throw new Error(`GitHub API error: ${response.status} ${response.statusText}`)
       }
 
-      const data = await response.json();
+      const data = await response.json()
 
       // Decode base64 content with UTF-8 support for Chinese characters
-      const content = decodeURIComponent(escape(atob(data.content)));
-      const gameData: GameQueueData = JSON.parse(content);
+      const content = decodeURIComponent(escape(atob(data.content)))
+      const gameData: GameQueueData = JSON.parse(content)
 
-      return gameData;
+      return gameData
     } catch (error) {
-      console.error('Failed to fetch games from GitHub:', error);
-      throw error;
+      console.error('Failed to fetch games from GitHub:', error)
+      throw error
     }
   }
 
   async updateGames(gameData: GameQueueData, commitMessage: string): Promise<void> {
     if (!this.isConfigured()) {
-      throw new Error('GitHub not configured. Please configure in Settings.');
+      throw new Error('GitHub not configured. Please configure in Settings.')
     }
 
     try {
       // First, get the current file SHA (required for updates)
-      let sha: string | undefined;
+      let sha: string | undefined
 
       try {
         const currentFile = await fetch(this.getApiUrl(FILE_PATH), {
           headers: this.getHeaders(),
-        });
+        })
 
         if (currentFile.ok) {
-          const data = await currentFile.json();
-          sha = data.sha;
+          const data = await currentFile.json()
+          sha = data.sha
         }
       } catch {
         // File might not exist yet, that's okay
-        console.log('File does not exist yet, will create new file');
+        console.log('File does not exist yet, will create new file')
       }
 
       // Encode content as base64
-      const content = JSON.stringify(gameData, null, 2);
-      const base64Content = btoa(unescape(encodeURIComponent(content)));
+      const content = JSON.stringify(gameData, null, 2)
+      const base64Content = btoa(unescape(encodeURIComponent(content)))
 
       // Create or update the file
       const response = await fetch(this.getApiUrl(FILE_PATH), {
@@ -142,17 +142,19 @@ export class GitHubService {
           content: base64Content,
           sha: sha,
         }),
-      });
+      })
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(`GitHub API error: ${response.status} ${errorData.message || response.statusText}`);
+        const errorData = await response.json()
+        throw new Error(
+          `GitHub API error: ${response.status} ${errorData.message || response.statusText}`
+        )
       }
 
-      console.log('Successfully updated games.json on GitHub');
+      console.log('Successfully updated games.json on GitHub')
     } catch (error) {
-      console.error('Failed to update games on GitHub:', error);
-      throw error;
+      console.error('Failed to update games on GitHub:', error)
+      throw error
     }
   }
 
@@ -160,26 +162,26 @@ export class GitHubService {
     try {
       const response = await fetch('https://api.github.com/user', {
         headers: {
-          'Authorization': `Bearer ${token}`,
-          'Accept': 'application/vnd.github.v3+json',
+          Authorization: `Bearer ${token}`,
+          Accept: 'application/vnd.github.v3+json',
         },
-      });
+      })
 
       if (!response.ok) {
-        return null;
+        return null
       }
 
-      const data = await response.json();
-      return data.login;
+      const data = await response.json()
+      return data.login
     } catch (error) {
-      console.error('Failed to get current user:', error);
-      return null;
+      console.error('Failed to get current user:', error)
+      return null
     }
   }
 
   async testConnection(): Promise<boolean> {
     if (!this.isConfigured()) {
-      return false;
+      return false
     }
 
     try {
@@ -188,14 +190,14 @@ export class GitHubService {
         {
           headers: this.getHeaders(),
         }
-      );
+      )
 
-      return response.ok;
+      return response.ok
     } catch (error) {
-      console.error('GitHub connection test failed:', error);
-      return false;
+      console.error('GitHub connection test failed:', error)
+      return false
     }
   }
 }
 
-export const githubService = new GitHubService();
+export const githubService = new GitHubService()

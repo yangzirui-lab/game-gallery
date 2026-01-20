@@ -1,23 +1,23 @@
-import React, { useState } from "react";
-import { Plus } from "lucide-react";
-import styles from "./index.module.scss";
+import React, { useState } from 'react'
+import { Plus } from 'lucide-react'
+import styles from './index.module.scss'
 
 interface AddGameProps {
-  onAdd: (name: string, steamUrl?: string) => void;
+  onAdd: (name: string, steamUrl?: string) => void
 }
 
 export const AddGame: React.FC<AddGameProps> = ({ onAdd }) => {
-  const [name, setName] = useState("");
-  const [steamUrl, setSteamUrl] = useState("");
+  const [name, setName] = useState('')
+  const [steamUrl, setSteamUrl] = useState('')
 
   const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+    e.preventDefault()
     if (name.trim()) {
-      onAdd(name.trim(), steamUrl.trim() || undefined);
-      setName("");
-      setSteamUrl("");
+      onAdd(name.trim(), steamUrl.trim() || undefined)
+      setName('')
+      setSteamUrl('')
     }
-  };
+  }
 
   return (
     <div className={styles.addContainer}>
@@ -42,5 +42,5 @@ export const AddGame: React.FC<AddGameProps> = ({ onAdd }) => {
         </button>
       </form>
     </div>
-  );
-};
+  )
+}
