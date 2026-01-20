@@ -256,7 +256,13 @@ function App() {
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, scale: 0.95 }}
                         transition={{ duration: 0.3 }}
-                        style={{ display: 'flex', gap: '0.5rem', alignItems: 'stretch' }}
+                        style={{
+                          display: 'flex',
+                          gap: '0.5rem',
+                          alignItems: 'stretch',
+                          position: 'relative'
+                        }}
+                        className="game-item-wrapper"
                       >
                         <GameItem
                           game={game}
@@ -265,27 +271,7 @@ function App() {
                         />
                         <button
                           onClick={() => handleDeleteGame(game.id)}
-                          style={{
-                            background: 'transparent',
-                            border: '1px solid var(--card-border)',
-                            borderRadius: '8px',
-                            color: 'var(--text-secondary)',
-                            cursor: 'pointer',
-                            padding: '0 0.75rem',
-                            display: 'flex',
-                            alignItems: 'center',
-                            transition: 'all 0.2s',
-                          }}
-                          onMouseEnter={(e) => {
-                            e.currentTarget.style.background = 'rgba(244, 63, 94, 0.1)';
-                            e.currentTarget.style.color = 'var(--status-dropped)';
-                            e.currentTarget.style.borderColor = 'var(--status-dropped)';
-                          }}
-                          onMouseLeave={(e) => {
-                            e.currentTarget.style.background = 'transparent';
-                            e.currentTarget.style.color = 'var(--text-secondary)';
-                            e.currentTarget.style.borderColor = 'var(--card-border)';
-                          }}
+                          className="delete-btn-external"
                           title="删除游戏"
                         >
                           <Trash2 size={18} />
@@ -320,7 +306,13 @@ function App() {
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, scale: 0.95 }}
                         transition={{ duration: 0.3 }}
-                        style={{ display: 'flex', gap: '0.5rem', alignItems: 'stretch' }}
+                        style={{
+                          display: 'flex',
+                          gap: '0.5rem',
+                          alignItems: 'stretch',
+                          position: 'relative'
+                        }}
+                        className="game-item-wrapper"
                       >
                         <GameItem
                           game={game}
@@ -329,27 +321,7 @@ function App() {
                         />
                         <button
                           onClick={() => handleDeleteGame(game.id)}
-                          style={{
-                            background: 'transparent',
-                            border: '1px solid var(--card-border)',
-                            borderRadius: '8px',
-                            color: 'var(--text-secondary)',
-                            cursor: 'pointer',
-                            padding: '0 0.75rem',
-                            display: 'flex',
-                            alignItems: 'center',
-                            transition: 'all 0.2s',
-                          }}
-                          onMouseEnter={(e) => {
-                            e.currentTarget.style.background = 'rgba(244, 63, 94, 0.1)';
-                            e.currentTarget.style.color = 'var(--status-dropped)';
-                            e.currentTarget.style.borderColor = 'var(--status-dropped)';
-                          }}
-                          onMouseLeave={(e) => {
-                            e.currentTarget.style.background = 'transparent';
-                            e.currentTarget.style.color = 'var(--text-secondary)';
-                            e.currentTarget.style.borderColor = 'var(--card-border)';
-                          }}
+                          className="delete-btn-external"
                           title="删除游戏"
                         >
                           <Trash2 size={18} />
@@ -384,7 +356,13 @@ function App() {
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, scale: 0.95 }}
                         transition={{ duration: 0.3 }}
-                        style={{ display: 'flex', gap: '0.5rem', alignItems: 'stretch' }}
+                        style={{
+                          display: 'flex',
+                          gap: '0.5rem',
+                          alignItems: 'stretch',
+                          position: 'relative'
+                        }}
+                        className="game-item-wrapper"
                       >
                         <GameItem
                           game={game}
@@ -393,27 +371,7 @@ function App() {
                         />
                         <button
                           onClick={() => handleDeleteGame(game.id)}
-                          style={{
-                            background: 'transparent',
-                            border: '1px solid var(--card-border)',
-                            borderRadius: '8px',
-                            color: 'var(--text-secondary)',
-                            cursor: 'pointer',
-                            padding: '0 0.75rem',
-                            display: 'flex',
-                            alignItems: 'center',
-                            transition: 'all 0.2s',
-                          }}
-                          onMouseEnter={(e) => {
-                            e.currentTarget.style.background = 'rgba(244, 63, 94, 0.1)';
-                            e.currentTarget.style.color = 'var(--status-dropped)';
-                            e.currentTarget.style.borderColor = 'var(--status-dropped)';
-                          }}
-                          onMouseLeave={(e) => {
-                            e.currentTarget.style.background = 'transparent';
-                            e.currentTarget.style.color = 'var(--text-secondary)';
-                            e.currentTarget.style.borderColor = 'var(--card-border)';
-                          }}
+                          className="delete-btn-external"
                           title="删除游戏"
                         >
                           <Trash2 size={18} />

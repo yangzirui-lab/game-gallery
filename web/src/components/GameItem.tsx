@@ -77,8 +77,8 @@ export const GameItem: React.FC<GameItemProps> = ({ game, onUpdate, isHighlighte
           src={game.coverImage}
           alt={game.name}
           style={{
-            width: '257px',
-            minWidth: '257px',
+            width: '320px',
+            minWidth: '320px',
             height: '120px',
             objectFit: 'cover',
             borderRadius: '8px 0 0 8px',
@@ -90,8 +90,8 @@ export const GameItem: React.FC<GameItemProps> = ({ game, onUpdate, isHighlighte
       ) : (
         <div
           style={{
-            width: '257px',
-            minWidth: '257px',
+            width: '320px',
+            minWidth: '320px',
             height: '120px',
             background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
             borderRadius: '8px 0 0 8px',

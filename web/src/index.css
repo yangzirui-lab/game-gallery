@@ -339,3 +339,37 @@ body {
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
 }
+
+/* Game item wrapper with delete button */
+.game-item-wrapper {
+  width: 100%;
+}
+
+.game-item-wrapper .game-card {
+  flex: 1;
+}
+
+.delete-btn-external {
+  background: transparent;
+  border: 1px solid var(--card-border);
+  border-radius: 8px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 0 0.75rem;
+  display: flex;
+  align-items: center;
+  transition: all 0.2s;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.game-item-wrapper:hover .delete-btn-external {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.delete-btn-external:hover {
+  background: rgba(244, 63, 94, 0.1);
+  color: var(--status-dropped);
+  border-color: var(--status-dropped);
+}
