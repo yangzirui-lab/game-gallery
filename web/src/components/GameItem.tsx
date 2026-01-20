@@ -1,23 +1,21 @@
 import React, { useRef, useEffect, useState } from "react";
 import type { Game, GameStatus } from "../types";
-import { Clock, Calendar, CheckCircle, Play, Bookmark, XCircle, Trash2, ExternalLink } from "lucide-react";
+import { Clock, Calendar, CheckCircle, Play, Bookmark, ExternalLink } from "lucide-react";
 import { format } from "date-fns";
 
 interface GameItemProps {
   game: Game;
   onUpdate: (id: string, updates: Partial<Game>) => void;
-  onDelete: (id: string) => void;
   isHighlighted: boolean;
 }
 
 const statusIcons: Record<GameStatus, React.ReactNode> = {
   playing: <Play size={14} className="text-status-playing" />,
-  backlog: <Bookmark size={14} className="text-status-backlog" />,
-  finished: <CheckCircle size={14} className="text-status-finished" />,
-  dropped: <XCircle size={14} className="text-status-dropped" />,
+  pending: <Bookmark size={14} className="text-status-backlog" />,
+  completion: <CheckCircle size={14} className="text-status-finished" />,
 };
 
-export const GameItem: React.FC<GameItemProps> = ({ game, onUpdate, onDelete, isHighlighted }) => {
+export const GameItem: React.FC<GameItemProps> = ({ game, onUpdate, isHighlighted }) => {
   const itemRef = useRef<HTMLDivElement>(null);
   const [isEditingSteamUrl, setIsEditingSteamUrl] = useState(false);
   const [steamUrlInput, setSteamUrlInput] = useState(game.steamUrl || "");
@@ -159,17 +157,9 @@ export const GameItem: React.FC<GameItemProps> = ({ game, onUpdate, onDelete, is
               style={{ color: `var(--status-${game.status})` }}
             >
               <option value="playing">Playing</option>
-              <option value="backlog">Backlog</option>
-              <option value="finished">Finished</option>
-              <option value="dropped">Dropped</option>
+              <option value="pending">Pending</option>
+              <option value="completion">Completion</option>
             </select>
-            <button
-              className="btn-delete"
-              onClick={() => onDelete(game.id)}
-              title="Delete Game"
-            >
-              <Trash2 size={16} />
-            </button>
           </div>
         </div>
 

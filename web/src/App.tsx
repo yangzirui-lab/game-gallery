@@ -5,7 +5,7 @@ import { SteamSearch } from './components/SteamSearch'
 import { Settings } from './components/Settings'
 import type { Game } from './types'
 import { AnimatePresence, motion } from 'framer-motion'
-import { SettingsIcon, Loader2 } from 'lucide-react'
+import { SettingsIcon, Loader2, Trash2 } from 'lucide-react'
 import { githubService } from './services/github'
 
 function App() {
@@ -57,22 +57,24 @@ function App() {
     }
   }, [toast])
 
-  // Sorting logic: "playing" first, then by lastUpdated
-  const sortedGames = useMemo(() => {
-    return [...games].sort((a, b) => {
-      if (a.status === 'playing' && b.status !== 'playing') return -1
-      if (a.status !== 'playing' && b.status === 'playing') return 1
-      return new Date(b.lastUpdated).getTime() - new Date(a.lastUpdated).getTime()
-    })
-  }, [games])
+  // Group games by status
+  const groupedGames = useMemo(() => {
+    const filtered = searchTerm
+      ? games.filter(g => g.name.toLowerCase().includes(searchTerm.toLowerCase()))
+      : games
 
-  // Filtering logic
-  const filteredGames = useMemo(() => {
-    if (!searchTerm) return sortedGames
-    return sortedGames.filter(g => 
-      g.name.toLowerCase().includes(searchTerm.toLowerCase())
+    const playing = filtered.filter(g => g.status === 'playing').sort((a, b) =>
+      new Date(b.lastUpdated).getTime() - new Date(a.lastUpdated).getTime()
     )
-  }, [sortedGames, searchTerm])
+    const pending = filtered.filter(g => g.status === 'pending').sort((a, b) =>
+      new Date(b.lastUpdated).getTime() - new Date(a.lastUpdated).getTime()
+    )
+    const completion = filtered.filter(g => g.status === 'completion').sort((a, b) =>
+      new Date(b.lastUpdated).getTime() - new Date(a.lastUpdated).getTime()
+    )
+
+    return { playing, pending, completion }
+  }, [games, searchTerm])
 
   const handleAddGameFromSteam = async (name: string, steamUrl: string, coverImage: string, _tags: string[]) => {
     const existing = games.find(g => g.name.toLowerCase() === name.toLowerCase())
@@ -85,7 +87,7 @@ function App() {
     const newGame: Game = {
       id: Date.now().toString(),
       name,
-      status: 'backlog',
+      status: 'pending',
       addedAt: new Date().toISOString(),
       lastUpdated: new Date().toISOString(),
       steamUrl,
@@ -230,31 +232,204 @@ function App() {
             <div style={{ marginTop: '1rem' }}>加载中...</div>
           </div>
         ) : (
-          <div className="game-list">
-            <AnimatePresence>
-              {filteredGames.length > 0 ? (
-                filteredGames.map(game => (
-                  <motion.div
-                    key={game.id}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, scale: 0.95 }}
-                    transition={{ duration: 0.3 }}
-                  >
-                    <GameItem
-                      game={game}
-                      onUpdate={handleUpdateGame}
-                      onDelete={handleDeleteGame}
-                      isHighlighted={highlightId === game.id}
-                    />
-                  </motion.div>
-                ))
-              ) : (
-                <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-secondary)' }}>
-                  没有找到游戏。请添加一些！
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+            {/* Playing Section */}
+            {groupedGames.playing.length > 0 && (
+              <div>
+                <h2 style={{
+                  fontSize: '1.25rem',
+                  fontWeight: '600',
+                  marginBottom: '1rem',
+                  color: 'var(--status-playing)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem'
+                }}>
+                  🎮 Playing ({groupedGames.playing.length})
+                </h2>
+                <div className="game-list">
+                  <AnimatePresence>
+                    {groupedGames.playing.map(game => (
+                      <motion.div
+                        key={game.id}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, scale: 0.95 }}
+                        transition={{ duration: 0.3 }}
+                        style={{ display: 'flex', gap: '0.5rem', alignItems: 'stretch' }}
+                      >
+                        <GameItem
+                          game={game}
+                          onUpdate={handleUpdateGame}
+                          isHighlighted={highlightId === game.id}
+                        />
+                        <button
+                          onClick={() => handleDeleteGame(game.id)}
+                          style={{
+                            background: 'transparent',
+                            border: '1px solid var(--card-border)',
+                            borderRadius: '8px',
+                            color: 'var(--text-secondary)',
+                            cursor: 'pointer',
+                            padding: '0 0.75rem',
+                            display: 'flex',
+                            alignItems: 'center',
+                            transition: 'all 0.2s',
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.background = 'rgba(244, 63, 94, 0.1)';
+                            e.currentTarget.style.color = 'var(--status-dropped)';
+                            e.currentTarget.style.borderColor = 'var(--status-dropped)';
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.background = 'transparent';
+                            e.currentTarget.style.color = 'var(--text-secondary)';
+                            e.currentTarget.style.borderColor = 'var(--card-border)';
+                          }}
+                          title="删除游戏"
+                        >
+                          <Trash2 size={18} />
+                        </button>
+                      </motion.div>
+                    ))}
+                  </AnimatePresence>
                 </div>
-              )}
-            </AnimatePresence>
+              </div>
+            )}
+
+            {/* Pending Section */}
+            {groupedGames.pending.length > 0 && (
+              <div>
+                <h2 style={{
+                  fontSize: '1.25rem',
+                  fontWeight: '600',
+                  marginBottom: '1rem',
+                  color: 'var(--status-backlog)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem'
+                }}>
+                  📋 Pending ({groupedGames.pending.length})
+                </h2>
+                <div className="game-list">
+                  <AnimatePresence>
+                    {groupedGames.pending.map(game => (
+                      <motion.div
+                        key={game.id}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, scale: 0.95 }}
+                        transition={{ duration: 0.3 }}
+                        style={{ display: 'flex', gap: '0.5rem', alignItems: 'stretch' }}
+                      >
+                        <GameItem
+                          game={game}
+                          onUpdate={handleUpdateGame}
+                          isHighlighted={highlightId === game.id}
+                        />
+                        <button
+                          onClick={() => handleDeleteGame(game.id)}
+                          style={{
+                            background: 'transparent',
+                            border: '1px solid var(--card-border)',
+                            borderRadius: '8px',
+                            color: 'var(--text-secondary)',
+                            cursor: 'pointer',
+                            padding: '0 0.75rem',
+                            display: 'flex',
+                            alignItems: 'center',
+                            transition: 'all 0.2s',
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.background = 'rgba(244, 63, 94, 0.1)';
+                            e.currentTarget.style.color = 'var(--status-dropped)';
+                            e.currentTarget.style.borderColor = 'var(--status-dropped)';
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.background = 'transparent';
+                            e.currentTarget.style.color = 'var(--text-secondary)';
+                            e.currentTarget.style.borderColor = 'var(--card-border)';
+                          }}
+                          title="删除游戏"
+                        >
+                          <Trash2 size={18} />
+                        </button>
+                      </motion.div>
+                    ))}
+                  </AnimatePresence>
+                </div>
+              </div>
+            )}
+
+            {/* Completion Section */}
+            {groupedGames.completion.length > 0 && (
+              <div>
+                <h2 style={{
+                  fontSize: '1.25rem',
+                  fontWeight: '600',
+                  marginBottom: '1rem',
+                  color: 'var(--status-finished)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem'
+                }}>
+                  ✅ Completion ({groupedGames.completion.length})
+                </h2>
+                <div className="game-list">
+                  <AnimatePresence>
+                    {groupedGames.completion.map(game => (
+                      <motion.div
+                        key={game.id}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, scale: 0.95 }}
+                        transition={{ duration: 0.3 }}
+                        style={{ display: 'flex', gap: '0.5rem', alignItems: 'stretch' }}
+                      >
+                        <GameItem
+                          game={game}
+                          onUpdate={handleUpdateGame}
+                          isHighlighted={highlightId === game.id}
+                        />
+                        <button
+                          onClick={() => handleDeleteGame(game.id)}
+                          style={{
+                            background: 'transparent',
+                            border: '1px solid var(--card-border)',
+                            borderRadius: '8px',
+                            color: 'var(--text-secondary)',
+                            cursor: 'pointer',
+                            padding: '0 0.75rem',
+                            display: 'flex',
+                            alignItems: 'center',
+                            transition: 'all 0.2s',
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.background = 'rgba(244, 63, 94, 0.1)';
+                            e.currentTarget.style.color = 'var(--status-dropped)';
+                            e.currentTarget.style.borderColor = 'var(--status-dropped)';
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.background = 'transparent';
+                            e.currentTarget.style.color = 'var(--text-secondary)';
+                            e.currentTarget.style.borderColor = 'var(--card-border)';
+                          }}
+                          title="删除游戏"
+                        >
+                          <Trash2 size={18} />
+                        </button>
+                      </motion.div>
+                    ))}
+                  </AnimatePresence>
+                </div>
+              </div>
+            )}
+
+            {games.length === 0 && (
+              <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-secondary)' }}>
+                没有找到游戏。请添加一些！
+              </div>
+            )}
           </div>
         )}
       </main>

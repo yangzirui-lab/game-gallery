@@ -1,4 +1,4 @@
-export type GameStatus = "backlog" | "playing" | "finished" | "dropped";
+export type GameStatus = "playing" | "pending" | "completion";
 
 export interface Game {
   id: string;
