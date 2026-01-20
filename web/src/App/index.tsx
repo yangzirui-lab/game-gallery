@@ -413,6 +413,7 @@ function App() {
                         onUpdate={handleUpdateGame}
                         onDelete={handleDeleteGame}
                         isHighlighted={highlightId === game.id}
+                        onShowToast={setToast}
                       />
                     </motion.div>
                   ))

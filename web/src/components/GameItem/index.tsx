@@ -9,9 +9,10 @@ interface GameItemProps {
   onUpdate: (id: string, updates: Partial<Game>) => void;
   onDelete: (id: string) => void;
   isHighlighted: boolean;
+  onShowToast?: (message: string) => void;
 }
 
-export const GameItem: React.FC<GameItemProps> = ({ game, onUpdate, onDelete, isHighlighted }) => {
+export const GameItem: React.FC<GameItemProps> = ({ game, onUpdate, onDelete, isHighlighted, onShowToast }) => {
   const itemRef = useRef<HTMLDivElement>(null);
   const [isEditingSteamUrl, setIsEditingSteamUrl] = useState(false);
   const [steamUrlInput, setSteamUrlInput] = useState(game.steamUrl || "");
@@ -40,6 +41,44 @@ export const GameItem: React.FC<GameItemProps> = ({ game, onUpdate, onDelete, is
   const handleSteamUrlCancel = () => {
     setSteamUrlInput(game.steamUrl || "");
     setIsEditingSteamUrl(false);
+  };
+
+  const handleGameNameClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    e.preventDefault();
+
+    if (!game.steamUrl) {
+      setIsEditingSteamUrl(true);
+      return;
+    }
+
+    const match = game.steamUrl.match(/\/app\/(\d+)/);
+    if (!match) return;
+
+    const appId = match[1];
+    const steamProtocolUrl = `steam://store/${appId}`;
+    const webUrl = game.steamUrl;
+
+    // 尝试打开Steam客户端
+    window.location.href = steamProtocolUrl;
+
+    // 检测Steam客户端是否打开
+    let blurred = false;
+    const onBlur = () => {
+      blurred = true;
+    };
+
+    window.addEventListener('blur', onBlur);
+
+    // 2秒后检查，如果Steam未打开则降级到网页
+    setTimeout(() => {
+      window.removeEventListener('blur', onBlur);
+
+      if (!blurred) {
+        // Steam客户端未安装，打开网页版
+        window.open(webUrl, '_blank', 'noopener,noreferrer');
+        onShowToast?.('未检测到Steam客户端，建议安装以获得更好体验');
+      }
+    }, 2000);
   };
 
   return (
@@ -82,8 +121,8 @@ export const GameItem: React.FC<GameItemProps> = ({ game, onUpdate, onDelete, is
             <div className={styles.gameTitleArea}>
               <div className={styles.gameTitleRow}>
                 <a
-                  href={game.steamUrl ? `steam://store/${game.steamUrl.match(/\/app\/(\d+)/)?.[1]}` : '#'}
-                  onClick={(e) => !game.steamUrl && (e.preventDefault(), setIsEditingSteamUrl(true))}
+                  href="#"
+                  onClick={handleGameNameClick}
                   className={styles.gameNameLink}
                 >
                   {game.name}
