@@ -89,8 +89,8 @@ export class GitHubService {
 
       const data = await response.json();
 
-      // Decode base64 content
-      const content = atob(data.content);
+      // Decode base64 content with UTF-8 support for Chinese characters
+      const content = decodeURIComponent(escape(atob(data.content)));
       const gameData: GameQueueData = JSON.parse(content);
 
       return gameData;
