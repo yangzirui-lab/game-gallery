@@ -15,6 +15,24 @@ export const SteamSearch: React.FC<SteamSearchProps> = ({ onAddGame, onClose }) 
   const [isSearching, setIsSearching] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // 异步获取单个游戏的好评率
+  const fetchGameReviews = async (game: SteamGame) => {
+    try {
+      const reviews = await steamService.getGameReviews(game.id);
+
+      // 更新该游戏的好评率数据
+      setResults(prevResults =>
+        prevResults.map(g =>
+          g.id === game.id
+            ? { ...g, positivePercentage: reviews.positivePercentage, totalReviews: reviews.totalReviews }
+            : g
+        )
+      );
+    } catch (err) {
+      console.error(`Failed to fetch reviews for game ${game.id}:`, err);
+    }
+  };
+
   // 实时搜索：输入时自动搜索，带防抖
   useEffect(() => {
     if (!query.trim()) {
@@ -29,6 +47,11 @@ export const SteamSearch: React.FC<SteamSearchProps> = ({ onAddGame, onClose }) 
       try {
         const games = await steamService.search(query);
         setResults(games);
+
+        // 先显示基本信息，然后异步获取每个游戏的好评率
+        games.forEach(game => {
+          fetchGameReviews(game);
+        });
       } catch (err) {
         setError('搜索失败，请重试');
         console.error('Steam search error:', err);
@@ -109,14 +132,21 @@ export const SteamSearch: React.FC<SteamSearchProps> = ({ onAddGame, onClose }) 
                   {game.name}
                 </div>
                 <div className={styles.gameMeta}>
-                  {game.positivePercentage !== null && game.totalReviews !== null && (
-                    <div className={classNames(styles.metaRating, {
-                      [styles.high]: game.positivePercentage >= 80,
-                      [styles.medium]: game.positivePercentage >= 60 && game.positivePercentage < 80,
-                      [styles.low]: game.positivePercentage < 60
-                    })}>
-                      好评率-{game.positivePercentage}%({game.totalReviews.toLocaleString()}评论数)
+                  {game.positivePercentage !== null && game.totalReviews !== null ? (
+                    <div className={styles.metaRating}>
+                      <span className={classNames(styles.ratingPercentage, {
+                        [styles.high]: game.positivePercentage >= 80,
+                        [styles.medium]: game.positivePercentage >= 60 && game.positivePercentage < 80,
+                        [styles.low]: game.positivePercentage < 60
+                      })}>
+                        {game.positivePercentage}% 好评
+                      </span>
+                      <span className={styles.reviewCount}>
+                        {game.totalReviews.toLocaleString()} 条评论
+                      </span>
                     </div>
+                  ) : (
+                    <div className={styles.metaRatingLoading}>加载好评率中...</div>
                   )}
                   {game.tags.length > 0 && (
                     <div className={styles.metaTags}>
