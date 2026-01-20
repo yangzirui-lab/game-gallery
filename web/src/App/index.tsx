@@ -69,13 +69,25 @@ function App() {
 
   // 定时刷新游戏好评率（每30分钟）
   useEffect(() => {
-    const refreshReviews = async () => {
+    const refreshReviews = async (prioritizeMissing = false) => {
       const currentGames = gamesRef.current
       if (currentGames.length === 0) return
 
       console.log('开始刷新游戏好评率...')
 
-      for (const game of currentGames) {
+      // 按优先级排序：缺少好评率的游戏优先
+      let gamesToRefresh = [...currentGames]
+      if (prioritizeMissing) {
+        gamesToRefresh = gamesToRefresh.sort((a, b) => {
+          const aMissing = a.positivePercentage === null || a.positivePercentage === undefined
+          const bMissing = b.positivePercentage === null || b.positivePercentage === undefined
+          if (aMissing && !bMissing) return -1
+          if (!aMissing && bMissing) return 1
+          return 0
+        })
+      }
+
+      for (const game of gamesToRefresh) {
         if (!game.steamUrl) continue
 
         // 从 steamUrl 中提取 appId
@@ -87,10 +99,13 @@ function App() {
         try {
           const reviews = await steamService.getGameReviews(appId)
 
-          // 只有当好评率数据有变化时才更新
-          if (reviews.positivePercentage !== game.positivePercentage ||
-              reviews.totalReviews !== game.totalReviews) {
+          // 如果获取到了好评率数据，或者数据有变化时更新
+          const needsUpdate =
+            (game.positivePercentage === null || game.positivePercentage === undefined) ||
+            (reviews.positivePercentage !== game.positivePercentage) ||
+            (reviews.totalReviews !== game.totalReviews)
 
+          if (needsUpdate && (reviews.positivePercentage !== null || reviews.totalReviews !== null)) {
             const updatedGame: Game = {
               ...game,
               positivePercentage: reviews.positivePercentage ?? game.positivePercentage,
@@ -103,7 +118,7 @@ function App() {
               prevGames.map(g => g.id === game.id ? updatedGame : g)
             )
 
-            console.log(`已更新 ${game.name} 的好评率`)
+            console.log(`已更新 ${game.name} 的好评率: ${reviews.positivePercentage}%`)
           }
         } catch (err) {
           console.error(`刷新 ${game.name} 好评率失败:`, err)
@@ -116,11 +131,11 @@ function App() {
       console.log('好评率刷新完成')
     }
 
-    // 延迟5秒后进行首次刷新（避免阻塞页面加载）
-    const initialTimer = setTimeout(refreshReviews, 5000)
+    // 延迟2秒后进行首次刷新，优先处理缺少好评率的游戏
+    const initialTimer = setTimeout(() => refreshReviews(true), 2000)
 
     // 每30分钟刷新一次
-    const interval = setInterval(refreshReviews, 30 * 60 * 1000)
+    const interval = setInterval(() => refreshReviews(false), 30 * 60 * 1000)
 
     return () => {
       clearTimeout(initialTimer)
