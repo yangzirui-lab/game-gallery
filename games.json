@@ -1,13 +1,26 @@
 {
   "games": [
     {
+      "id": "1768969431603",
+      "name": "No Man's Sky 无人深空",
+      "status": "queueing",
+      "addedAt": "2026-01-21T04:23:51.603Z",
+      "lastUpdated": "2026-01-21T04:23:51.603Z",
+      "steamUrl": "https://store.steampowered.com/app/275850",
+      "coverImage": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/275850/fe698ad2fe52d89e7435da01ab03eda597bbd25d/capsule_231x87_schinese.jpg?t=1765800348"
+    },
+    {
       "id": "1768969389454",
       "name": "翼星求生 ICARUS",
       "status": "queueing",
       "addedAt": "2026-01-21T04:23:09.454Z",
       "lastUpdated": "2026-01-21T04:23:09.455Z",
       "steamUrl": "https://store.steampowered.com/app/1149460",
-      "coverImage": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1149460/capsule_231x87_schinese.jpg?t=1764892501"
+      "coverImage": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1149460/capsule_231x87_schinese.jpg?t=1764892501",
+      "positivePercentage": 74,
+      "totalReviews": 57497,
+      "releaseDate": "2021 年 12 月 3 日",
+      "isEarlyAccess": false
     },
     {
       "id": "1768969318420",
