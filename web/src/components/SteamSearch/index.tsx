@@ -14,8 +14,7 @@ interface SteamSearchProps {
     totalReviews?: number,
     releaseDate?: string,
     comingSoon?: boolean,
-    isEarlyAccess?: boolean,
-    genres?: { id: string; description: string }[]
+    isEarlyAccess?: boolean
   ) => void
   onClose: () => void
 }
@@ -45,7 +44,6 @@ export const SteamSearch: React.FC<SteamSearchProps> = ({ onAddGame, onClose }) 
                 releaseDate: releaseInfo.releaseDate,
                 comingSoon: releaseInfo.comingSoon,
                 isEarlyAccess: releaseInfo.isEarlyAccess,
-                genres: releaseInfo.genres,
               }
             : g
         )
@@ -104,8 +102,7 @@ export const SteamSearch: React.FC<SteamSearchProps> = ({ onAddGame, onClose }) 
       game.totalReviews ?? undefined,
       game.releaseDate ?? undefined,
       game.comingSoon ?? undefined,
-      game.isEarlyAccess ?? undefined,
-      game.genres ?? undefined
+      game.isEarlyAccess ?? undefined
     )
     onClose()
   }

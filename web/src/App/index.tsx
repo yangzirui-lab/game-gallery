@@ -137,7 +137,7 @@ function App() {
                   releaseDate: game.releaseDate,
                   comingSoon: game.comingSoon,
                   isEarlyAccess: game.isEarlyAccess,
-                  genres: game.genres || null,
+                  genres: null,
                 }),
           ])
 
@@ -174,7 +174,6 @@ function App() {
                     releaseDate: releaseInfo.releaseDate ?? g.releaseDate,
                     comingSoon: releaseInfo.comingSoon ?? g.comingSoon,
                     isEarlyAccess: releaseInfo.isEarlyAccess ?? g.isEarlyAccess,
-                    genres: releaseInfo.genres ?? g.genres,
                     // 不更新 lastUpdated，保持原有排序
                   }
                 }
@@ -215,7 +214,6 @@ function App() {
                   releaseDate: localUpdate.releaseDate,
                   comingSoon: localUpdate.comingSoon,
                   isEarlyAccess: localUpdate.isEarlyAccess,
-                  genres: localUpdate.genres,
                 }
               }
               return remoteGame
@@ -272,8 +270,7 @@ function App() {
     totalReviews?: number,
     releaseDate?: string,
     comingSoon?: boolean,
-    isEarlyAccess?: boolean,
-    genres?: { id: string; description: string }[]
+    isEarlyAccess?: boolean
   ) => {
     const existing = games.find((g) => g.name.toLowerCase() === name.toLowerCase())
     if (existing) {
@@ -295,7 +292,6 @@ function App() {
       releaseDate,
       comingSoon,
       isEarlyAccess,
-      genres,
     }
 
     try {
@@ -342,8 +338,7 @@ function App() {
               reviews.positivePercentage !== null ||
               reviews.totalReviews !== null ||
               releaseInfo.releaseDate !== null ||
-              releaseInfo.isEarlyAccess !== null ||
-              releaseInfo.genres !== null
+              releaseInfo.isEarlyAccess !== null
             ) {
               // 更新本地状态
               setGames((prevGames) =>
@@ -357,7 +352,6 @@ function App() {
                       releaseDate: releaseInfo.releaseDate ?? g.releaseDate,
                       comingSoon: releaseInfo.comingSoon ?? g.comingSoon,
                       isEarlyAccess: releaseInfo.isEarlyAccess ?? g.isEarlyAccess,
-                      genres: releaseInfo.genres ?? g.genres,
                     }
                   }
                   return g
@@ -376,7 +370,6 @@ function App() {
                         releaseDate: releaseInfo.releaseDate ?? g.releaseDate,
                         comingSoon: releaseInfo.comingSoon ?? g.comingSoon,
                         isEarlyAccess: releaseInfo.isEarlyAccess ?? g.isEarlyAccess,
-                        genres: releaseInfo.genres ?? g.genres,
                       }
                     }
                     return g
@@ -384,7 +377,7 @@ function App() {
                 }, `Update game via web: ${name}`)
 
                 console.log(
-                  `已获取并保存 ${name} 的信息: 好评率 ${reviews.positivePercentage}%, 发布日期 ${releaseInfo.releaseDate}, 抢先体验 ${releaseInfo.isEarlyAccess}, genres ${releaseInfo.genres?.length ?? 0} 个`
+                  `已获取并保存 ${name} 的信息: 好评率 ${reviews.positivePercentage}%, 发布日期 ${releaseInfo.releaseDate}, 抢先体验 ${releaseInfo.isEarlyAccess}`
                 )
               } catch (saveErr) {
                 console.error(`保存 ${name} 信息到 GitHub 失败:`, saveErr)
@@ -475,7 +468,6 @@ function App() {
             isEarlyAccess: releaseInfo.isEarlyAccess,
             releaseDate: releaseInfo.releaseDate ?? updatedGames[i].releaseDate,
             comingSoon: releaseInfo.comingSoon ?? updatedGames[i].comingSoon,
-            genres: releaseInfo.genres ?? updatedGames[i].genres,
           }
           updatedCount++
           console.log(`已更新 ${game.name} 的抢先体验状态: ${releaseInfo.isEarlyAccess}`)
@@ -503,7 +495,6 @@ function App() {
                 isEarlyAccess: localUpdate.isEarlyAccess,
                 releaseDate: localUpdate.releaseDate,
                 comingSoon: localUpdate.comingSoon,
-                genres: localUpdate.genres,
               }
             }
             return remoteGame
