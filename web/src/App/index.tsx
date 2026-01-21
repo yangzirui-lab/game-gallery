@@ -197,8 +197,31 @@ function App() {
       // 所有游戏刷新完成后，统一保存一次到 GitHub
       if (hasAnyUpdate) {
         try {
-          const finalGames = gamesRef.current
-          await githubService.updateGames({ games: finalGames }, 'Update games info after refresh')
+          const finalGames = await githubService.concurrentUpdateGames((remoteGames) => {
+            // 将最新的好评率数据合并到远程数据中
+            // 以远程数据为基准，只更新好评率相关字段
+            const updatedRemoteGames = remoteGames.map((remoteGame) => {
+              const localUpdate = gamesRef.current.find((g) => g.id === remoteGame.id)
+              if (localUpdate) {
+                // 如果本地有更新（好评率等），应用到远程数据
+                // 注意：这里我们假设 gamesRef.current 中的好评率是最新的，因为我们刚刚刷新过
+                // 但是，如果远程 games 列表已经变了（比如删除了游戏），map 会保留远程的列表结构
+                return {
+                  ...remoteGame,
+                  positivePercentage: localUpdate.positivePercentage,
+                  totalReviews: localUpdate.totalReviews,
+                  releaseDate: localUpdate.releaseDate,
+                  comingSoon: localUpdate.comingSoon,
+                  isEarlyAccess: localUpdate.isEarlyAccess,
+                }
+              }
+              return remoteGame
+            })
+            return updatedRemoteGames
+          }, 'Update games info after refresh')
+
+          // 更新本地状态以匹配远程（虽然这里主要是后台刷新，但保持一致是个好习惯）
+          setGames(finalGames)
           console.log('已保存所有游戏信息到 GitHub')
         } catch (err) {
           console.error('保存游戏信息到 GitHub 失败:', err)
@@ -271,13 +294,20 @@ function App() {
     }
 
     try {
-      const updatedGames = [newGame, ...games]
-      setGames(updatedGames)
-
-      await githubService.updateGames(
-        { games: updatedGames },
+      // 使用 concurrentUpdateGames 确保在添加时获取最新数据，避免覆盖他人更改
+      const finalGames = await githubService.concurrentUpdateGames(
+        (currentGames) => {
+          // 再次检查是否已存在（防止并发添加）
+          const duplicate = currentGames.find((g) => g.name.toLowerCase() === name.toLowerCase())
+          if (duplicate) {
+            throw new Error(`"${name}" 已经在队列中！`)
+          }
+          return [newGame, ...currentGames]
+        },
         `Add game via web: ${name} (${steamUrl.split('/').pop()})`
       )
+
+      setGames(finalGames)
 
       setToast(`从 Steam 添加了 "${name}"`)
       setHighlightId(newGame.id)
@@ -347,21 +377,18 @@ function App() {
     const game = games.find((g) => g.id === id)
     if (!game) return
 
-    const updatedGame: Game = {
-      ...game,
-      ...updates,
-      lastUpdated: new Date().toISOString(),
-    }
-
     try {
-      const updatedGames = games.map((g) => (g.id === id ? updatedGame : g))
-      setGames(updatedGames)
+      const finalGames = await githubService.concurrentUpdateGames((currentGames) => {
+        return currentGames.map((g) =>
+          g.id === id ? { ...g, ...updates, lastUpdated: new Date().toISOString() } : g
+        )
+      }, `Update game via web: ${game.name}`)
 
-      await githubService.updateGames({ games: updatedGames }, `Update game via web: ${game.name}`)
+      setGames(finalGames)
     } catch (err) {
       console.error('Failed to update game:', err)
       setToast('更新游戏失败')
-      setGames(games) // 回滚
+      // 不需要回滚，因为我们没有提前更新本地状态
     }
   }
 
@@ -371,19 +398,15 @@ function App() {
 
     if (window.confirm(`确定要删除 "${game.name}"?`)) {
       try {
-        const updatedGames = games.filter((g) => g.id !== id)
-        setGames(updatedGames)
+        const finalGames = await githubService.concurrentUpdateGames((currentGames) => {
+          return currentGames.filter((g) => g.id !== id)
+        }, `Remove game via web: ${game.name}`)
 
-        await githubService.updateGames(
-          { games: updatedGames },
-          `Remove game via web: ${game.name}`
-        )
-
+        setGames(finalGames)
         setToast(`移除了 "${game.name}"`)
       } catch (err) {
         console.error('Failed to delete game:', err)
         setToast('删除游戏失败')
-        setGames(games) // 回滚
       }
     }
   }
@@ -441,10 +464,22 @@ function App() {
     // 保存到 GitHub
     if (updatedCount > 0) {
       try {
-        await githubService.updateGames(
-          { games: updatedGames },
-          `Force refresh early access status (${updatedCount} games updated)`
-        )
+        const finalGames = await githubService.concurrentUpdateGames((remoteGames) => {
+          return remoteGames.map((remoteGame) => {
+            const localUpdate = updatedGames.find((g) => g.id === remoteGame.id)
+            if (localUpdate) {
+              return {
+                ...remoteGame,
+                isEarlyAccess: localUpdate.isEarlyAccess,
+                releaseDate: localUpdate.releaseDate,
+                comingSoon: localUpdate.comingSoon,
+              }
+            }
+            return remoteGame
+          })
+        }, `Force refresh early access status (${updatedCount} games updated)`)
+
+        setGames(finalGames)
         setToast(`抢先体验状态刷新完成，已更新 ${updatedCount} 个游戏`)
       } catch (err) {
         console.error('保存到 GitHub 失败:', err)

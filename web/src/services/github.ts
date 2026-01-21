@@ -6,6 +6,11 @@ interface GitHubConfig {
   repo: string
 }
 
+interface GitHubFileResponse {
+  content: string
+  sha: string
+}
+
 const STORAGE_KEY = 'github_config'
 const FILE_PATH = 'games.json'
 
@@ -107,44 +112,50 @@ export class GitHubService {
   }
 
   async updateGames(gameData: GameQueueData, commitMessage: string): Promise<void> {
+    await this.concurrentUpdateGames(() => gameData.games, commitMessage)
+  }
+
+  async concurrentUpdateGames(
+    updater: (currentGames: import('../types').Game[]) => import('../types').Game[],
+    commitMessage: string
+  ): Promise<import('../types').Game[]> {
     if (!this.isConfigured()) {
       throw new Error('GitHub not configured. Please configure in Settings.')
     }
 
     try {
-      // First, get the current file SHA (required for updates)
-      let sha: string | undefined
+      // 1. Fetch latest content and SHA
+      const { data, sha } = await this.fetchRawFile()
 
-      try {
-        const currentFile = await fetch(this.getApiUrl(FILE_PATH), {
-          headers: this.getHeaders(),
-        })
-
-        if (currentFile.ok) {
-          const data = await currentFile.json()
-          sha = data.sha
-        }
-      } catch {
-        // File might not exist yet, that's okay
-        console.log('File does not exist yet, will create new file')
+      let currentGames: import('../types').Game[] = []
+      if (data) {
+        const content = decodeURIComponent(escape(atob(data.content)))
+        const parsed: GameQueueData = JSON.parse(content)
+        currentGames = parsed.games
       }
 
-      // Encode content as base64
-      const content = JSON.stringify(gameData, null, 2)
+      // 2. Apply updater
+      const newGames = updater(currentGames)
+      const newGameData: GameQueueData = { games: newGames }
+
+      // 3. Save with optimistic locking (using SHA)
+      const content = JSON.stringify(newGameData, null, 2)
       const base64Content = btoa(unescape(encodeURIComponent(content)))
 
-      // Create or update the file
       const response = await fetch(this.getApiUrl(FILE_PATH), {
         method: 'PUT',
         headers: this.getHeaders(),
         body: JSON.stringify({
           message: commitMessage,
           content: base64Content,
-          sha: sha,
+          sha: sha, // Include SHA to prevent overwriting if file changed since fetch
         }),
       })
 
       if (!response.ok) {
+        if (response.status === 409) {
+          throw new Error('Conflict detected: Remote file has changed. Please retry.')
+        }
         const errorData = await response.json()
         throw new Error(
           `GitHub API error: ${response.status} ${errorData.message || response.statusText}`
@@ -152,8 +163,31 @@ export class GitHubService {
       }
 
       console.log('Successfully updated games.json on GitHub')
+      return newGames
     } catch (error) {
       console.error('Failed to update games on GitHub:', error)
+      throw error
+    }
+  }
+
+  private async fetchRawFile(): Promise<{ data: GitHubFileResponse | null; sha?: string }> {
+    try {
+      const response = await fetch(this.getApiUrl(FILE_PATH), {
+        headers: this.getHeaders(),
+      })
+
+      if (response.status === 404) {
+        return { data: null }
+      }
+
+      if (!response.ok) {
+        throw new Error(`GitHub API error: ${response.status} ${response.statusText}`)
+      }
+
+      const data = await response.json()
+      return { data, sha: data.sha }
+    } catch (error) {
+      console.error('Failed to fetch raw file:', error)
       throw error
     }
   }
