@@ -42,13 +42,13 @@ export const GameItem: React.FC<GameItemProps> = ({
     return statusFlow[status]
   }
 
-  const getStatusLabel = (status: GameStatus): string => {
-    const labels: Record<GameStatus, string> = {
-      queueing: 'Queueing',
-      playing: 'Playing',
-      completion: 'Completion',
+  const getActionLabel = (nextStatus: GameStatus): string => {
+    const actions: Record<GameStatus, string> = {
+      playing: 'Start Playing',
+      completion: 'Mark Complete',
+      queueing: 'Queue',
     }
-    return labels[status]
+    return actions[nextStatus]
   }
 
   const handleStatusClick = async () => {
@@ -338,16 +338,16 @@ export const GameItem: React.FC<GameItemProps> = ({
                   { [styles.loading]: isUpdating }
                 )}
                 onClick={handleStatusClick}
-                title={`点击移动到 ${getStatusLabel(getNextStatus(game.status))}`}
+                title={getActionLabel(getNextStatus(game.status))}
                 disabled={isAnimating || isUpdating}
               >
                 {isUpdating ? (
                   <>
                     <Loader2 size={16} className={styles.spinner} />
-                    <span>更新中...</span>
+                    <span>Updating...</span>
                   </>
                 ) : (
-                  getStatusLabel(getNextStatus(game.status))
+                  getActionLabel(getNextStatus(game.status))
                 )}
               </button>
             </div>
