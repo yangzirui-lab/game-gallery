@@ -19,6 +19,7 @@ export interface Game {
   comingSoon?: boolean
   isEarlyAccess?: boolean
   genres?: Genre[]
+  isPinned?: boolean
 }
 
 export interface GameQueueData {

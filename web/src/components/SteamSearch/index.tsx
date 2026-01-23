@@ -15,7 +15,7 @@ interface SteamSearchProps {
     releaseDate?: string,
     comingSoon?: boolean,
     isEarlyAccess?: boolean
-  ) => void
+  ) => Promise<void>
   onClose: () => void
 }
 
@@ -24,6 +24,7 @@ export const SteamSearch: React.FC<SteamSearchProps> = ({ onAddGame, onClose }) 
   const [results, setResults] = useState<SteamGame[]>([])
   const [isSearching, setIsSearching] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [addingGameId, setAddingGameId] = useState<number | null>(null)
 
   // 异步获取单个游戏的好评率和发布日期
   const fetchGameReviews = async (game: SteamGame) => {
@@ -92,19 +93,29 @@ export const SteamSearch: React.FC<SteamSearchProps> = ({ onAddGame, onClose }) 
     }
   }
 
-  const handleAddGame = (game: SteamGame) => {
-    onAddGame(
-      game.name,
-      game.steamUrl,
-      game.coverImage,
-      game.tags,
-      game.positivePercentage ?? undefined,
-      game.totalReviews ?? undefined,
-      game.releaseDate ?? undefined,
-      game.comingSoon ?? undefined,
-      game.isEarlyAccess ?? undefined
-    )
-    onClose()
+  const handleAddGame = async (game: SteamGame) => {
+    if (addingGameId !== null) return // 防止重复点击
+
+    setAddingGameId(game.id)
+    try {
+      await onAddGame(
+        game.name,
+        game.steamUrl,
+        game.coverImage,
+        game.tags,
+        game.positivePercentage ?? undefined,
+        game.totalReviews ?? undefined,
+        game.releaseDate ?? undefined,
+        game.comingSoon ?? undefined,
+        game.isEarlyAccess ?? undefined
+      )
+      onClose()
+    } catch (err) {
+      console.error('Failed to add game:', err)
+      setError('添加游戏失败，请重试')
+    } finally {
+      setAddingGameId(null)
+    }
   }
 
   return (
@@ -186,9 +197,24 @@ export const SteamSearch: React.FC<SteamSearchProps> = ({ onAddGame, onClose }) 
                     )}
                   </div>
                 </div>
-                <button onClick={() => handleAddGame(game)} className={styles.addBtn}>
-                  <Plus size={16} />
-                  添加
+                <button
+                  onClick={() => handleAddGame(game)}
+                  className={classNames(styles.addBtn, {
+                    [styles.loading]: addingGameId === game.id,
+                  })}
+                  disabled={addingGameId === game.id}
+                >
+                  {addingGameId === game.id ? (
+                    <>
+                      <Loader2 size={16} className="animate-spin" />
+                      添加中...
+                    </>
+                  ) : (
+                    <>
+                      <Plus size={16} />
+                      添加
+                    </>
+                  )}
                 </button>
               </div>
             ))}

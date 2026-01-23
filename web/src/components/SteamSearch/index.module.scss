@@ -174,6 +174,17 @@
           align-items: center;
           gap: 0.5rem;
           white-space: nowrap;
+          transition: opacity 0.2s;
+
+          &:hover:not(:disabled) {
+            background: #218838;
+          }
+
+          &.loading,
+          &:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+          }
         }
       }
     }

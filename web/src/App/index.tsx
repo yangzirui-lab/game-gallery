@@ -248,15 +248,17 @@ function App() {
       ? games.filter((g) => g.name.toLowerCase().includes(searchTerm.toLowerCase()))
       : games
 
-    const playing = filtered
-      .filter((g) => g.status === 'playing')
-      .sort((a, b) => new Date(b.lastUpdated).getTime() - new Date(a.lastUpdated).getTime())
-    const queueing = filtered
-      .filter((g) => g.status === 'queueing')
-      .sort((a, b) => new Date(b.lastUpdated).getTime() - new Date(a.lastUpdated).getTime())
-    const completion = filtered
-      .filter((g) => g.status === 'completion')
-      .sort((a, b) => new Date(b.lastUpdated).getTime() - new Date(a.lastUpdated).getTime())
+    const sortByPinnedAndDate = (a: Game, b: Game) => {
+      // 置顶的游戏优先
+      if (a.isPinned && !b.isPinned) return -1
+      if (!a.isPinned && b.isPinned) return 1
+      // 都置顶或都不置顶，按更新时间排序
+      return new Date(b.lastUpdated).getTime() - new Date(a.lastUpdated).getTime()
+    }
+
+    const playing = filtered.filter((g) => g.status === 'playing').sort(sortByPinnedAndDate)
+    const queueing = filtered.filter((g) => g.status === 'queueing').sort(sortByPinnedAndDate)
+    const completion = filtered.filter((g) => g.status === 'completion').sort(sortByPinnedAndDate)
 
     return { playing, queueing, completion }
   }, [games, searchTerm])
@@ -276,6 +278,7 @@ function App() {
     if (existing) {
       setToast(`"${name}" 已经在队列中！`)
       setHighlightId(existing.id)
+      // 重复的游戏仍然算作成功，因为游戏已存在，只是不需要再添加
       return
     }
 
@@ -392,6 +395,7 @@ function App() {
       console.error('Failed to add game:', err)
       setToast('添加游戏失败')
       setGames(games) // 回滚
+      throw err // 重新抛出错误以便 SteamSearch 组件可以处理
     }
   }
 
@@ -418,18 +422,42 @@ function App() {
     const game = games.find((g) => g.id === id)
     if (!game) return
 
-    if (window.confirm(`确定要删除 "${game.name}"?`)) {
-      try {
-        const finalGames = await githubService.concurrentUpdateGames((currentGames) => {
-          return currentGames.filter((g) => g.id !== id)
-        }, `Remove game via web: ${game.name}`)
+    try {
+      const finalGames = await githubService.concurrentUpdateGames((currentGames) => {
+        return currentGames.filter((g) => g.id !== id)
+      }, `Remove game via web: ${game.name}`)
 
-        setGames(finalGames)
-        setToast(`移除了 "${game.name}"`)
-      } catch (err) {
-        console.error('Failed to delete game:', err)
-        setToast('删除游戏失败')
-      }
+      setGames(finalGames)
+      setToast(`移除了 "${game.name}"`)
+    } catch (err) {
+      console.error('Failed to delete game:', err)
+      setToast('删除游戏失败')
+    }
+  }
+
+  const handlePinGame = async (id: string) => {
+    const game = games.find((g) => g.id === id)
+    if (!game) return
+
+    const newPinnedState = !game.isPinned
+
+    try {
+      const finalGames = await githubService.concurrentUpdateGames(
+        (currentGames) => {
+          return currentGames.map((g) =>
+            g.id === id
+              ? { ...g, isPinned: newPinnedState, lastUpdated: new Date().toISOString() }
+              : g
+          )
+        },
+        `${newPinnedState ? 'Pin' : 'Unpin'} game via web: ${game.name}`
+      )
+
+      setGames(finalGames)
+      setToast(newPinnedState ? `已置顶 "${game.name}"` : `已取消置顶 "${game.name}"`)
+    } catch (err) {
+      console.error('Failed to pin game:', err)
+      setToast('操作失败')
     }
   }
 
@@ -620,6 +648,7 @@ function App() {
                         game={game}
                         onUpdate={handleUpdateGame}
                         onDelete={handleDeleteGame}
+                        onPin={handlePinGame}
                         isHighlighted={highlightId === game.id}
                         onShowToast={setToast}
                       />

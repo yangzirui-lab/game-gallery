@@ -1,13 +1,14 @@
 import React, { useRef, useEffect, useState } from 'react'
 import classNames from 'classnames'
 import type { Game, GameStatus } from '../../types'
-import { Trash2, Loader2 } from 'lucide-react'
+import { Trash2, Loader2, Pin } from 'lucide-react'
 import styles from './index.module.scss'
 
 interface GameItemProps {
   game: Game
   onUpdate: (id: string, updates: Partial<Game>) => Promise<void>
-  onDelete: (id: string) => void
+  onDelete: (id: string) => Promise<void>
+  onPin: (id: string) => Promise<void>
   isHighlighted: boolean
   onShowToast?: (message: string) => void
 }
@@ -16,6 +17,7 @@ export const GameItem: React.FC<GameItemProps> = ({
   game,
   onUpdate,
   onDelete,
+  onPin,
   isHighlighted,
   onShowToast,
 }) => {
@@ -25,6 +27,8 @@ export const GameItem: React.FC<GameItemProps> = ({
   const [coverError, setCoverError] = useState(false)
   const [isAnimating, setIsAnimating] = useState(false)
   const [isUpdating, setIsUpdating] = useState(false)
+  const [isPinning, setIsPinning] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
   const statusBtnRef = useRef<HTMLButtonElement>(null)
 
   useEffect(() => {
@@ -246,21 +250,61 @@ export const GameItem: React.FC<GameItemProps> = ({
     window.open(game.steamUrl, '_blank', 'noopener,noreferrer')
   }
 
+  const handlePinClick = async () => {
+    if (isPinning) return
+
+    setIsPinning(true)
+    try {
+      await onPin(game.id)
+    } finally {
+      setIsPinning(false)
+    }
+  }
+
+  const handleDeleteClick = async () => {
+    if (isDeleting) return
+
+    if (!window.confirm(`确定要删除 "${game.name}"?`)) {
+      return
+    }
+
+    setIsDeleting(true)
+    try {
+      await onDelete(game.id)
+    } finally {
+      setIsDeleting(false)
+    }
+  }
+
   return (
     <div
       ref={itemRef}
       className={classNames(styles.gameCard, {
         [styles.playing]: game.status === 'playing',
         [styles.highlight]: isHighlighted,
+        [styles.pinned]: game.isPinned,
       })}
       id={`game-${game.id}`}
     >
       <button
-        onClick={() => onDelete(game.id)}
-        className={styles.deleteBtnAbsolute}
-        title="删除游戏"
+        onClick={handlePinClick}
+        className={classNames(styles.pinBtnAbsolute, {
+          [styles.active]: game.isPinned,
+          [styles.loading]: isPinning,
+        })}
+        title={game.isPinned ? '取消置顶' : '置顶游戏'}
+        disabled={isPinning}
       >
-        <Trash2 size={16} />
+        {isPinning ? <Loader2 size={16} className={styles.spinner} /> : <Pin size={16} />}
+      </button>
+
+      <button
+        onClick={handleDeleteClick}
+        className={classNames(styles.deleteBtnAbsolute, { [styles.loading]: isDeleting })}
+        title="删除游戏"
+        disabled={isDeleting}
+      >
+        {isDeleting ? <Loader2 size={16} className={styles.spinner} /> : <Trash2 size={16} />}
       </button>
 
       <div className={styles.gameWrapper}>
