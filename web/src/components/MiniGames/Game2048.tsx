@@ -12,6 +12,7 @@ export const Game2048: React.FC<{ onClose: () => void }> = ({ onClose }) => {
   const [gameOver, setGameOver] = useState(false)
   const [gameWon, setGameWon] = useState(false)
   const [gameStarted, setGameStarted] = useState(false)
+  const [mergedTiles, setMergedTiles] = useState<Set<string>>(new Set())
 
   function initializeBoard(): Board {
     const newBoard = Array(GRID_SIZE)
@@ -37,23 +38,33 @@ export const Game2048: React.FC<{ onClose: () => void }> = ({ onClose }) => {
     }
   }
 
-  function move(board: Board, direction: Direction): { newBoard: Board; moved: boolean; scoreGained: number } {
+  function move(board: Board, direction: Direction): { newBoard: Board; moved: boolean; scoreGained: number; mergedPositions: Set<string> } {
     const newBoard = board.map((row) => [...row])
     let moved = false
     let scoreGained = 0
+    const mergedPositions = new Set<string>()
 
-    const moveLeft = (row: number[]): { row: number[]; score: number } => {
+    const moveLeft = (row: number[], rowIndex: number, isVertical: boolean): { row: number[]; score: number } => {
       const filtered = row.filter((val) => val !== 0)
       let score = 0
       const merged: number[] = []
+      let mergeIndex = 0
 
       for (let i = 0; i < filtered.length; i++) {
         if (i < filtered.length - 1 && filtered[i] === filtered[i + 1]) {
           merged.push(filtered[i] * 2)
           score += filtered[i] * 2
+          // 记录合并位置
+          if (isVertical) {
+            mergedPositions.add(`${mergeIndex}-${rowIndex}`)
+          } else {
+            mergedPositions.add(`${rowIndex}-${mergeIndex}`)
+          }
+          mergeIndex++
           i++
         } else {
           merged.push(filtered[i])
+          mergeIndex++
         }
       }
 
@@ -66,7 +77,7 @@ export const Game2048: React.FC<{ onClose: () => void }> = ({ onClose }) => {
 
     if (direction === 'LEFT') {
       for (let i = 0; i < GRID_SIZE; i++) {
-        const { row: newRow, score } = moveLeft(newBoard[i])
+        const { row: newRow, score } = moveLeft(newBoard[i], i, false)
         if (JSON.stringify(newRow) !== JSON.stringify(newBoard[i])) {
           moved = true
         }
@@ -76,18 +87,30 @@ export const Game2048: React.FC<{ onClose: () => void }> = ({ onClose }) => {
     } else if (direction === 'RIGHT') {
       for (let i = 0; i < GRID_SIZE; i++) {
         const reversed = [...newBoard[i]].reverse()
-        const { row: newRow, score } = moveLeft(reversed)
+        const { row: newRow, score } = moveLeft(reversed, i, false)
         const finalRow = newRow.reverse()
         if (JSON.stringify(finalRow) !== JSON.stringify(newBoard[i])) {
           moved = true
         }
+        // 需要调整合并位置的列索引（因为是反转的）
+        const tempMerged = new Set<string>()
+        mergedPositions.forEach((pos) => {
+          const [row, col] = pos.split('-').map(Number)
+          if (row === i) {
+            tempMerged.add(`${row}-${GRID_SIZE - 1 - col}`)
+            mergedPositions.delete(pos)
+          } else {
+            tempMerged.add(pos)
+          }
+        })
+        tempMerged.forEach((pos) => mergedPositions.add(pos))
         newBoard[i] = finalRow
         scoreGained += score
       }
     } else if (direction === 'UP') {
       for (let j = 0; j < GRID_SIZE; j++) {
         const column = newBoard.map((row) => row[j])
-        const { row: newColumn, score } = moveLeft(column)
+        const { row: newColumn, score } = moveLeft(column, j, true)
         if (JSON.stringify(newColumn) !== JSON.stringify(column)) {
           moved = true
         }
@@ -99,11 +122,23 @@ export const Game2048: React.FC<{ onClose: () => void }> = ({ onClose }) => {
     } else if (direction === 'DOWN') {
       for (let j = 0; j < GRID_SIZE; j++) {
         const column = newBoard.map((row) => row[j]).reverse()
-        const { row: newColumn, score } = moveLeft(column)
+        const { row: newColumn, score } = moveLeft(column, j, true)
         const finalColumn = newColumn.reverse()
         if (JSON.stringify(finalColumn) !== JSON.stringify(newBoard.map((row) => row[j]))) {
           moved = true
         }
+        // 需要调整合并位置的行索引（因为是反转的）
+        const tempMerged = new Set<string>()
+        mergedPositions.forEach((pos) => {
+          const [row, col] = pos.split('-').map(Number)
+          if (col === j) {
+            tempMerged.add(`${GRID_SIZE - 1 - row}-${col}`)
+            mergedPositions.delete(pos)
+          } else {
+            tempMerged.add(pos)
+          }
+        })
+        tempMerged.forEach((pos) => mergedPositions.add(pos))
         for (let i = 0; i < GRID_SIZE; i++) {
           newBoard[i][j] = finalColumn[i]
         }
@@ -111,7 +146,7 @@ export const Game2048: React.FC<{ onClose: () => void }> = ({ onClose }) => {
       }
     }
 
-    return { newBoard, moved, scoreGained }
+    return { newBoard, moved, scoreGained, mergedPositions }
   }
 
   function isGameOver(board: Board): boolean {
@@ -138,12 +173,19 @@ export const Game2048: React.FC<{ onClose: () => void }> = ({ onClose }) => {
     (direction: Direction) => {
       if (gameOver || !gameStarted) return
 
-      const { newBoard, moved, scoreGained } = move(board, direction)
+      const { newBoard, moved, scoreGained, mergedPositions } = move(board, direction)
 
       if (moved) {
         addRandomTile(newBoard)
         setBoard(newBoard)
         setScore((prev) => prev + scoreGained)
+
+        // 设置合并动画
+        setMergedTiles(mergedPositions)
+        // 300ms后清除合并标记（与CSS动画时长一致）
+        setTimeout(() => {
+          setMergedTiles(new Set())
+        }, 300)
 
         if (hasWon(newBoard) && !gameWon) {
           setGameWon(true)
@@ -163,6 +205,7 @@ export const Game2048: React.FC<{ onClose: () => void }> = ({ onClose }) => {
     setGameOver(false)
     setGameWon(false)
     setGameStarted(true)
+    setMergedTiles(new Set())
   }
 
   useEffect(() => {
@@ -239,18 +282,22 @@ export const Game2048: React.FC<{ onClose: () => void }> = ({ onClose }) => {
 
         <div className={styles.board}>
           {board.map((row, i) =>
-            row.map((value, j) => (
-              <div
-                key={`${i}-${j}`}
-                className={`${styles.tile} ${value !== 0 ? styles.filled : ''}`}
-                style={{
-                  backgroundColor: value !== 0 ? getTileColor(value) : 'rgba(238, 228, 218, 0.35)',
-                  color: getTileTextColor(value),
-                }}
-              >
-                {value !== 0 && value}
-              </div>
-            ))
+            row.map((value, j) => {
+              const tileKey = `${i}-${j}`
+              const isMerged = mergedTiles.has(tileKey)
+              return (
+                <div
+                  key={tileKey}
+                  className={`${styles.tile} ${value !== 0 ? styles.filled : ''} ${isMerged ? styles.merged : ''}`}
+                  style={{
+                    backgroundColor: value !== 0 ? getTileColor(value) : 'rgba(238, 228, 218, 0.35)',
+                    color: getTileTextColor(value),
+                  }}
+                >
+                  {value !== 0 && value}
+                </div>
+              )
+            })
           )}
 
           {!gameStarted && (

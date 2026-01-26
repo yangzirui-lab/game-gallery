@@ -86,12 +86,13 @@
   position: relative;
   display: grid;
   grid-template-columns: repeat(4, 1fr);
+  grid-template-rows: repeat(4, 1fr);
   gap: 12px;
   background: #bbada0;
   padding: 12px;
   border-radius: 8px;
-  width: 400px;
-  height: 400px;
+  width: 424px;
+  height: 424px;
 }
 
 .tile {
@@ -101,10 +102,16 @@
   font-size: 2rem;
   font-weight: 700;
   border-radius: 4px;
-  transition: all 0.15s ease;
+  transition: transform 0.15s ease, background-color 0.15s ease;
+  width: 94px;
+  height: 94px;
 
   &.filled {
     animation: tileAppear 0.2s ease;
+  }
+
+  &.merged {
+    animation: tileMerge 0.3s ease;
   }
 }
 
@@ -113,9 +120,24 @@
     transform: scale(0);
     opacity: 0;
   }
+  50% {
+    transform: scale(1.1);
+  }
   100% {
     transform: scale(1);
     opacity: 1;
+  }
+}
+
+@keyframes tileMerge {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.2);
+  }
+  100% {
+    transform: scale(1);
   }
 }
 
