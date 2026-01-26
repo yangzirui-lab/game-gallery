@@ -1,20 +1,20 @@
 .miniGamesContainer {
-  padding: 2rem 0;
+  padding: 1rem 0;
   max-width: 1200px;
   margin: 0 auto;
 }
 
 .gamesGrid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 1.5rem;
-  margin-bottom: 3rem;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1rem;
 }
 
 .gameCard {
   position: relative;
-  padding: 2rem;
-  border-radius: 16px;
+  padding: 1.5rem;
+  border-radius: 12px;
   cursor: pointer;
   transition: all 0.3s ease;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
@@ -49,69 +49,36 @@
 }
 
 .gameIcon {
-  font-size: 4rem;
-  margin-bottom: 1rem;
+  font-size: 3rem;
+  margin-bottom: 0.75rem;
   text-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
 }
 
 .gameName {
-  margin: 0 0 0.75rem 0;
-  font-size: 1.5rem;
+  margin: 0 0 0.5rem 0;
+  font-size: 1.25rem;
   font-weight: 600;
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
 }
 
 .gameDescription {
-  margin: 0 0 1rem 0;
-  font-size: 0.95rem;
+  margin: 0 0 0.75rem 0;
+  font-size: 0.85rem;
   opacity: 0.9;
-  line-height: 1.5;
+  line-height: 1.4;
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
 }
 
 .playBtn {
   display: inline-block;
-  padding: 0.625rem 1.25rem;
+  padding: 0.5rem 1rem;
   background: rgba(255, 255, 255, 0.2);
-  border-radius: 8px;
+  border-radius: 6px;
   font-weight: 600;
+  font-size: 0.875rem;
   backdrop-filter: blur(4px);
   border: 1px solid rgba(255, 255, 255, 0.3);
   opacity: 0;
   transform: translateY(10px);
   transition: all 0.3s;
-}
-
-.comingSoon {
-  margin-top: 3rem;
-  display: flex;
-  justify-content: center;
-}
-
-.comingSoonCard {
-  text-align: center;
-  padding: 3rem 2rem;
-  background: rgba(255, 255, 255, 0.05);
-  border: 2px dashed rgba(255, 255, 255, 0.2);
-  border-radius: 16px;
-  max-width: 400px;
-}
-
-.comingSoonIcon {
-  font-size: 4rem;
-  margin-bottom: 1rem;
-  opacity: 0.6;
-}
-
-.comingSoonCard h3 {
-  margin: 0 0 0.75rem 0;
-  color: #fff;
-  font-size: 1.25rem;
-  font-weight: 600;
-}
-
-.comingSoonCard p {
-  margin: 0;
-  color: #999;
-  font-size: 0.95rem;
 }

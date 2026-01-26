@@ -49,14 +49,6 @@ export const MiniGames: React.FC = () => {
             </div>
           ))}
         </div>
-
-        <div className={styles.comingSoon}>
-          <div className={styles.comingSoonCard}>
-            <div className={styles.comingSoonIcon}>🎮</div>
-            <h3>更多游戏即将上线</h3>
-            <p>敬请期待更多精彩的小游戏！</p>
-          </div>
-        </div>
       </div>
 
       {activeGame === 'snake' && <SnakeGame onClose={handleCloseGame} />}
