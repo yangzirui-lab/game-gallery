@@ -39,7 +39,7 @@
   }
 
   .btnSteam {
-    padding: 0.5rem 1rem;
+    padding: 0.65rem 1.25rem;
     background: #1b8dd4;
     color: white;
     border: none;
@@ -47,10 +47,20 @@
     cursor: pointer;
     white-space: nowrap;
     font-size: 0.9rem;
-    font-weight: 500;
-    height: 38px;
+    font-weight: 600;
     display: flex;
     align-items: center;
+    transition: all 0.2s;
+    height: fit-content;
+
+    &:hover {
+      background: #1e7bb4;
+      box-shadow: 0 2px 8px rgba(27, 141, 212, 0.4);
+    }
+
+    &:active {
+      background: #1a6a9e;
+    }
   }
 
   .btnSettings {
@@ -69,6 +79,65 @@
     gap: 0.5rem;
   }
 
+  .mainTabNav {
+    display: flex;
+    gap: 0;
+    margin-bottom: 2rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    background: transparent;
+  }
+
+  .mainTabBtn {
+    padding: 1rem 1.5rem;
+    background: transparent;
+    border: none;
+    border-bottom: 3px solid transparent;
+    color: rgba(255, 255, 255, 0.35);
+    cursor: pointer;
+    font-size: 1rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 0.625rem;
+    transition: all 0.2s ease;
+    position: relative;
+    box-shadow: none;
+    margin-right: 1rem;
+
+    svg {
+      opacity: 0.6;
+      transition: opacity 0.2s;
+    }
+
+    &:hover:not(.mainTabActive) {
+      color: rgba(255, 255, 255, 0.7);
+      background: transparent;
+
+      svg {
+        opacity: 0.9;
+      }
+    }
+
+    &:last-child {
+      margin-right: 0;
+    }
+  }
+
+  .mainTabActive {
+    color: #60a5fa;
+    border-bottom-color: #60a5fa;
+    background: transparent;
+
+    svg {
+      opacity: 1;
+    }
+
+    &:hover {
+      color: #60a5fa;
+      background: transparent;
+    }
+  }
+
   .loadingContainer {
     text-align: center;
     padding: 3rem;
@@ -83,12 +152,19 @@
     margin-top: 1rem;
   }
 
+  .tabNavRow {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+    gap: 1rem;
+  }
+
   .tabNav {
     display: inline-flex;
     background: rgba(255, 255, 255, 0.08);
     border-radius: 50px;
     padding: 0;
-    margin-bottom: 2rem;
     border: 1px solid rgba(255, 255, 255, 0.12);
     overflow: hidden;
   }

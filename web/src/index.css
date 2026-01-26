@@ -8,9 +8,9 @@
   --accent-color: #3b82f6;
   --accent-glow: rgba(59, 130, 246, 0.5);
 
-  --status-playing: #10b981;
-  --status-queueing: #f59e0b;
-  --status-completion: #0ea5e9;
+  --status-playing: #34d399;
+  --status-queueing: #fbbf24;
+  --status-completion: #38bdf8;
   --status-dropped: #ef4444;
 
   font-family:

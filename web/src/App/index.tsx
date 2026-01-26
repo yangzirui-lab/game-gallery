@@ -1,13 +1,13 @@
 import { useState, useMemo, useEffect, useRef } from 'react'
 import classNames from 'classnames'
 import { GameItem } from '../components/GameItem'
-import { SearchBar } from '../components/SearchBar'
+import { SearchBar, type SearchResult } from '../components/SearchBar'
 import { SteamSearch } from '../components/SteamSearch'
 import { Settings } from '../components/Settings'
 import { MiniGames } from '../components/MiniGames'
 import type { Game, GameStatus } from '../types'
 import { AnimatePresence, motion } from 'framer-motion'
-import { SettingsIcon, Loader2, Play, Bookmark, CheckCircle, Gamepad2 } from 'lucide-react'
+import { SettingsIcon, Loader2, Play, Bookmark, CheckCircle, Gamepad2, Library, Sparkles } from 'lucide-react'
 import { githubService } from '../services/github'
 import { steamService } from '../services/steam'
 import { handleSteamCallback } from '../services/steamAuth'
@@ -21,9 +21,8 @@ function App() {
   const [isLoading, setIsLoading] = useState(false)
   const [showSteamSearch, setShowSteamSearch] = useState(false)
   const [showSettings, setShowSettings] = useState(false)
-  const [activeTab, setActiveTab] = useState<
-    'playing' | 'queueing' | 'completion' | 'minigames'
-  >('playing')
+  const [mainTab, setMainTab] = useState<'steamgames' | 'playground'>('steamgames')
+  const [activeTab, setActiveTab] = useState<'playing' | 'queueing' | 'completion'>('playing')
 
   // Handle Steam login callback
   useEffect(() => {
@@ -265,10 +264,6 @@ function App() {
 
   // Group games by status
   const groupedGames = useMemo(() => {
-    const filtered = searchTerm
-      ? games.filter((g) => g.name.toLowerCase().includes(searchTerm.toLowerCase()))
-      : games
-
     const sortByPinnedAndDate = (a: Game, b: Game) => {
       // 置顶的游戏优先
       if (a.isPinned && !b.isPinned) return -1
@@ -277,12 +272,64 @@ function App() {
       return new Date(b.lastUpdated).getTime() - new Date(a.lastUpdated).getTime()
     }
 
-    const playing = filtered.filter((g) => g.status === 'playing').sort(sortByPinnedAndDate)
-    const queueing = filtered.filter((g) => g.status === 'queueing').sort(sortByPinnedAndDate)
-    const completion = filtered.filter((g) => g.status === 'completion').sort(sortByPinnedAndDate)
+    const playing = games.filter((g) => g.status === 'playing').sort(sortByPinnedAndDate)
+    const queueing = games.filter((g) => g.status === 'queueing').sort(sortByPinnedAndDate)
+    const completion = games.filter((g) => g.status === 'completion').sort(sortByPinnedAndDate)
 
     return { playing, queueing, completion }
+  }, [games])
+
+  // Generate search results
+  const searchResults = useMemo((): SearchResult[] => {
+    if (!searchTerm) return []
+
+    const results: SearchResult[] = []
+    const lowerSearch = searchTerm.toLowerCase()
+
+    // Search in Steam games
+    games.forEach((game) => {
+      if (game.name.toLowerCase().includes(lowerSearch)) {
+        results.push({
+          id: game.id,
+          name: game.name,
+          type: 'steam-game',
+          status: game.status,
+          mainTab: 'steamgames',
+        })
+      }
+    })
+
+    // Search in mini games
+    const miniGames = [{ id: 'snake', name: '贪吃蛇', description: '经典贪吃蛇游戏，控制蛇吃食物并避免撞墙' }]
+    miniGames.forEach((game) => {
+      if (
+        game.name.toLowerCase().includes(lowerSearch) ||
+        game.description.toLowerCase().includes(lowerSearch)
+      ) {
+        results.push({
+          id: game.id,
+          name: game.name,
+          type: 'mini-game',
+          mainTab: 'playground',
+        })
+      }
+    })
+
+    return results
   }, [games, searchTerm])
+
+  // Handle search result click
+  const handleSearchResultClick = (result: SearchResult) => {
+    setMainTab(result.mainTab)
+    if (result.type === 'steam-game' && result.status) {
+      setActiveTab(result.status)
+      // Scroll to the game after a short delay to allow tab switch
+      setTimeout(() => {
+        setHighlightId(result.id)
+        setTimeout(() => setHighlightId(null), 2000)
+      }, 100)
+    }
+  }
 
   const handleAddGameFromSteam = async (
     name: string,
@@ -509,77 +556,94 @@ function App() {
       <header className={styles.header}>
         <h1>GameGallery</h1>
         <div className={styles.headerActions}>
-          <SearchBar value={searchTerm} onSearch={handleSearch} />
-          <button onClick={() => setShowSteamSearch(true)} className={styles.btnSteam}>
-            从 Steam 添加
-          </button>
+          <SearchBar
+            value={searchTerm}
+            onSearch={handleSearch}
+            results={searchResults}
+            onResultClick={handleSearchResultClick}
+          />
           <button onClick={() => setShowSettings(true)} className={styles.btnSettings} title="设置">
             <SettingsIcon size={18} />
           </button>
         </div>
       </header>
 
+      {/* Main Tab Navigation */}
+      <div className={styles.mainTabNav}>
+        <button
+          onClick={() => setMainTab('steamgames')}
+          className={classNames(styles.mainTabBtn, {
+            [styles.mainTabActive]: mainTab === 'steamgames',
+          })}
+        >
+          <Library size={20} />
+          Steam Games
+        </button>
+        <button
+          onClick={() => setMainTab('playground')}
+          className={classNames(styles.mainTabBtn, {
+            [styles.mainTabActive]: mainTab === 'playground',
+          })}
+        >
+          <Sparkles size={20} />
+          Playground
+        </button>
+      </div>
+
       <main>
-        {isLoading ? (
+        {mainTab === 'playground' ? (
+          <MiniGames onClose={() => {}} />
+        ) : isLoading ? (
           <div className={styles.loadingContainer}>
             <Loader2 className={`${styles.loaderIcon} animate-spin`} size={32} />
             <div className={styles.mt1}>加载中...</div>
           </div>
         ) : (
           <div>
-            {/* Tab Navigation - iOS Style */}
-            <div className={styles.tabNav}>
-              <button
-                data-status="playing"
-                onClick={() => setActiveTab('playing')}
-                className={classNames(styles.tabBtn, {
-                  [styles.active]: activeTab === 'playing',
-                  [styles.activePlaying]: activeTab === 'playing',
-                })}
-              >
-                <Play size={16} />
-                Playing ({groupedGames.playing.length})
-              </button>
-              <button
-                data-status="queueing"
-                onClick={() => setActiveTab('queueing')}
-                className={classNames(styles.tabBtn, {
-                  [styles.active]: activeTab === 'queueing',
-                  [styles.activeQueueing]: activeTab === 'queueing',
-                })}
-              >
-                <Bookmark size={16} />
-                Queueing ({groupedGames.queueing.length})
-              </button>
-              <button
-                data-status="completion"
-                onClick={() => setActiveTab('completion')}
-                className={classNames(styles.tabBtn, {
-                  [styles.active]: activeTab === 'completion',
-                  [styles.activeCompletion]: activeTab === 'completion',
-                })}
-              >
-                <CheckCircle size={16} />
-                Completion ({groupedGames.completion.length})
-              </button>
-              <button
-                data-status="minigames"
-                onClick={() => setActiveTab('minigames')}
-                className={classNames(styles.tabBtn, {
-                  [styles.active]: activeTab === 'minigames',
-                  [styles.activeMiniGames]: activeTab === 'minigames',
-                })}
-              >
-                <Gamepad2 size={16} />
-                Playground
+            {/* Tab Navigation with Add Button */}
+            <div className={styles.tabNavRow}>
+              <div className={styles.tabNav}>
+                <button
+                  data-status="playing"
+                  onClick={() => setActiveTab('playing')}
+                  className={classNames(styles.tabBtn, {
+                    [styles.active]: activeTab === 'playing',
+                    [styles.activePlaying]: activeTab === 'playing',
+                  })}
+                >
+                  <Play size={16} />
+                  Playing ({groupedGames.playing.length})
+                </button>
+                <button
+                  data-status="queueing"
+                  onClick={() => setActiveTab('queueing')}
+                  className={classNames(styles.tabBtn, {
+                    [styles.active]: activeTab === 'queueing',
+                    [styles.activeQueueing]: activeTab === 'queueing',
+                  })}
+                >
+                  <Bookmark size={16} />
+                  Queueing ({groupedGames.queueing.length})
+                </button>
+                <button
+                  data-status="completion"
+                  onClick={() => setActiveTab('completion')}
+                  className={classNames(styles.tabBtn, {
+                    [styles.active]: activeTab === 'completion',
+                    [styles.activeCompletion]: activeTab === 'completion',
+                  })}
+                >
+                  <CheckCircle size={16} />
+                  Completion ({groupedGames.completion.length})
+                </button>
+              </div>
+              <button onClick={() => setShowSteamSearch(true)} className={styles.btnSteam}>
+                从 Steam 添加
               </button>
             </div>
 
-            {/* Game List or MiniGames */}
-            {activeTab === 'minigames' ? (
-              <MiniGames />
-            ) : (
-              <div className={styles.gameList}>
+            {/* Game List */}
+            <div className={styles.gameList}>
               <AnimatePresence mode="wait">
                 {groupedGames[activeTab].length > 0 ? (
                   groupedGames[activeTab].map((game) => (
@@ -613,12 +677,7 @@ function App() {
                   </motion.div>
                 )}
               </AnimatePresence>
-              </div>
-            )}
-
-            {activeTab !== 'minigames' && games.length === 0 && (
-              <div className={styles.emptyState}>队列中暂无游戏</div>
-            )}
+            </div>
           </div>
         )}
       </main>

@@ -20,7 +20,11 @@ const miniGames: MiniGame[] = [
   },
 ]
 
-export const MiniGames: React.FC = () => {
+interface MiniGamesProps {
+  onClose: () => void
+}
+
+export const MiniGames: React.FC<MiniGamesProps> = ({ onClose }) => {
   const [activeGame, setActiveGame] = useState<string | null>(null)
 
   const handlePlayGame = (gameId: string) => {
@@ -34,13 +38,6 @@ export const MiniGames: React.FC = () => {
   return (
     <>
       <div className={styles.playgroundContainer}>
-        <div className={styles.playgroundHeader}>
-          <div className={styles.headerContent}>
-            <h2 className={styles.title}>🎮 游戏广场</h2>
-            <p className={styles.subtitle}>休息一下，来玩个小游戏放松一下吧</p>
-          </div>
-        </div>
-
         <div className={styles.gamesSection}>
           <div className={styles.gamesGrid}>
             {miniGames.map((game) => (
@@ -49,14 +46,15 @@ export const MiniGames: React.FC = () => {
                 className={styles.gameCard}
                 onClick={() => handlePlayGame(game.id)}
               >
-                <div className={styles.cardInner} style={{ background: game.color }}>
+                <div className={styles.cardInner}>
                   <div className={styles.gameIcon}>{game.icon}</div>
-                  <h3 className={styles.gameName}>{game.name}</h3>
-                  <p className={styles.gameDescription}>{game.description}</p>
-                  <div className={styles.playBtn}>
-                    <span>开始游戏</span>
-                    <span className={styles.playIcon}>▶</span>
+                  <div className={styles.gameInfo}>
+                    <h3 className={styles.gameName}>{game.name}</h3>
+                    <p className={styles.gameDescription}>{game.description}</p>
                   </div>
+                  <button className={styles.playBtn} onClick={(e) => { e.stopPropagation(); handlePlayGame(game.id) }}>
+                    开始游戏 <span className={styles.playIcon}>▶</span>
+                  </button>
                 </div>
               </div>
             ))}

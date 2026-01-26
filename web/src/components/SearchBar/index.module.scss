@@ -7,6 +7,7 @@
     position: absolute;
     left: 0.75rem;
     color: var(--text-secondary);
+    z-index: 1;
   }
 
   .searchInput {
@@ -25,6 +26,86 @@
       border-color: var(--accent-color);
       box-shadow: 0 0 0 2px var(--accent-glow);
       width: 300px;
+    }
+
+    &::placeholder {
+      color: var(--text-secondary);
+    }
+  }
+
+  .searchResults {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    margin-top: 0.5rem;
+    background: var(--panel-bg);
+    border: 1px solid var(--card-border);
+    border-radius: 12px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+    max-height: 400px;
+    overflow-y: auto;
+    z-index: 1000;
+    backdrop-filter: blur(10px);
+  }
+
+  .searchResultItem {
+    padding: 0.75rem 1rem;
+    cursor: pointer;
+    transition: background 0.2s;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+
+    &:last-child {
+      border-bottom: none;
+    }
+
+    &:hover {
+      background: rgba(255, 255, 255, 0.05);
+    }
+  }
+
+  .resultName {
+    color: var(--text-primary);
+    font-size: 0.9rem;
+    font-weight: 500;
+    margin-bottom: 0.25rem;
+  }
+
+  .resultMeta {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+  }
+
+  .badge {
+    display: inline-block;
+    padding: 0.125rem 0.5rem;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+  }
+
+  .statusBadge {
+    display: inline-block;
+    padding: 0.125rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: 500;
+
+    &.playing {
+      background: rgba(52, 211, 153, 0.2);
+      color: #34d399;
+    }
+
+    &.queueing {
+      background: rgba(251, 191, 36, 0.2);
+      color: #fbbf24;
+    }
+
+    &.completion {
+      background: rgba(56, 189, 248, 0.2);
+      color: #38bdf8;
     }
   }
 }
