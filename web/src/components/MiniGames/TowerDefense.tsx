@@ -182,7 +182,7 @@ export const TowerDefense: React.FC<{ onClose: () => void }> = ({ onClose }) => 
 
   const enemyIdRef = useRef(0)
   const towerIdRef = useRef(0)
-  const animationFrameRef = useRef<number>()
+  const animationFrameRef = useRef<number | undefined>(undefined)
   const lastUpdateRef = useRef<number>(Date.now())
 
   const level = LEVELS[currentLevel]
