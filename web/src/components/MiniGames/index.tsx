@@ -1,6 +1,8 @@
 import React, { useState } from 'react'
 import { SnakeGame } from './SnakeGame'
 import { Game2048 } from './Game2048'
+import { MemoryGame } from './MemoryGame'
+import { TowerDefense } from './TowerDefense'
 import styles from './index.module.scss'
 
 interface MiniGame {
@@ -25,6 +27,20 @@ const miniGames: MiniGame[] = [
     description: '滑动方块合并相同数字，挑战达到 2048',
     icon: '🎯',
     color: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
+  },
+  {
+    id: 'memory',
+    name: '记忆翻牌',
+    description: '翻开卡片找出所有配对，挑战你的记忆力',
+    icon: '🧠',
+    color: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+  },
+  {
+    id: 'tower',
+    name: '塔防',
+    description: '建造防御塔抵御敌人，通过三个关卡',
+    icon: '🗼',
+    color: 'linear-gradient(135deg, #1e293b 0%, #334155 100%)',
   },
 ]
 
@@ -72,6 +88,8 @@ export const MiniGames: React.FC<MiniGamesProps> = ({ onClose: _onClose }) => {
 
       {activeGame === 'snake' && <SnakeGame onClose={handleCloseGame} />}
       {activeGame === '2048' && <Game2048 onClose={handleCloseGame} />}
+      {activeGame === 'memory' && <MemoryGame onClose={handleCloseGame} />}
+      {activeGame === 'tower' && <TowerDefense onClose={handleCloseGame} />}
     </>
   )
 }

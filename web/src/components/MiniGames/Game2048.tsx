@@ -13,6 +13,7 @@ export const Game2048: React.FC<{ onClose: () => void }> = ({ onClose }) => {
   const [gameWon, setGameWon] = useState(false)
   const [gameStarted, setGameStarted] = useState(false)
   const [mergedTiles, setMergedTiles] = useState<Set<string>>(new Set())
+  const [newTiles, setNewTiles] = useState<Set<string>>(new Set())
 
   function initializeBoard(): Board {
     const newBoard = Array(GRID_SIZE)
@@ -23,7 +24,7 @@ export const Game2048: React.FC<{ onClose: () => void }> = ({ onClose }) => {
     return newBoard
   }
 
-  function addRandomTile(board: Board): void {
+  function addRandomTile(board: Board): string | null {
     const emptyCells: [number, number][] = []
     for (let i = 0; i < GRID_SIZE; i++) {
       for (let j = 0; j < GRID_SIZE; j++) {
@@ -35,7 +36,9 @@ export const Game2048: React.FC<{ onClose: () => void }> = ({ onClose }) => {
     if (emptyCells.length > 0) {
       const [row, col] = emptyCells[Math.floor(Math.random() * emptyCells.length)]
       board[row][col] = Math.random() < 0.9 ? 2 : 4
+      return `${row}-${col}`
     }
+    return null
   }
 
   function move(board: Board, direction: Direction): { newBoard: Board; moved: boolean; scoreGained: number; mergedPositions: Set<string> } {
@@ -176,13 +179,23 @@ export const Game2048: React.FC<{ onClose: () => void }> = ({ onClose }) => {
       const { newBoard, moved, scoreGained, mergedPositions } = move(board, direction)
 
       if (moved) {
-        addRandomTile(newBoard)
+        const newTilePos = addRandomTile(newBoard)
         setBoard(newBoard)
         setScore((prev) => prev + scoreGained)
 
         // 设置合并动画
         setMergedTiles(mergedPositions)
-        // 300ms后清除合并标记（与CSS动画时长一致）
+        // 设置新方块动画
+        if (newTilePos) {
+          setNewTiles(new Set([newTilePos]))
+        }
+
+        // 200ms后清除新方块标记（与tileAppear动画时长一致）
+        setTimeout(() => {
+          setNewTiles(new Set())
+        }, 200)
+
+        // 300ms后清除合并标记（与tileMerge动画时长一致）
         setTimeout(() => {
           setMergedTiles(new Set())
         }, 300)
@@ -206,6 +219,7 @@ export const Game2048: React.FC<{ onClose: () => void }> = ({ onClose }) => {
     setGameWon(false)
     setGameStarted(true)
     setMergedTiles(new Set())
+    setNewTiles(new Set())
   }
 
   useEffect(() => {
@@ -285,10 +299,19 @@ export const Game2048: React.FC<{ onClose: () => void }> = ({ onClose }) => {
             row.map((value, j) => {
               const tileKey = `${i}-${j}`
               const isMerged = mergedTiles.has(tileKey)
+              const isNew = newTiles.has(tileKey)
+
+              // 只有新生成的方块才有.filled动画，合并的方块只有.merged动画
+              const tileClasses = [
+                styles.tile,
+                isNew && styles.filled,
+                isMerged && styles.merged
+              ].filter(Boolean).join(' ')
+
               return (
                 <div
                   key={tileKey}
-                  className={`${styles.tile} ${value !== 0 ? styles.filled : ''} ${isMerged ? styles.merged : ''}`}
+                  className={tileClasses}
                   style={{
                     backgroundColor: value !== 0 ? getTileColor(value) : 'rgba(238, 228, 218, 0.35)',
                     color: getTileTextColor(value),

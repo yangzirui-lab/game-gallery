@@ -303,6 +303,8 @@ function App() {
     const miniGames = [
       { id: 'snake', name: '贪吃蛇', description: '经典贪吃蛇游戏，控制蛇吃食物并避免撞墙' },
       { id: '2048', name: '2048', description: '滑动方块合并相同数字，挑战达到 2048' },
+      { id: 'memory', name: '记忆翻牌', description: '翻开卡片找出所有配对，挑战你的记忆力' },
+      { id: 'tower', name: '塔防', description: '建造防御塔抵御敌人，通过三个关卡' },
     ]
     miniGames.forEach((game) => {
       if (
