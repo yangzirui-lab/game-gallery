@@ -571,7 +571,7 @@ function App() {
                 })}
               >
                 <Gamepad2 size={16} />
-                小游戏
+                Playground
               </button>
             </div>
 

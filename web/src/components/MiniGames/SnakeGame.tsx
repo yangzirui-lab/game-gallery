@@ -17,7 +17,7 @@ export const SnakeGame: React.FC<{ onClose: () => void }> = ({ onClose }) => {
   const [isPaused, setIsPaused] = useState(false)
   const [gameStarted, setGameStarted] = useState(false)
   const directionRef = useRef(direction)
-  const gameLoopRef = useRef<NodeJS.Timeout>()
+  const gameLoopRef = useRef<number | undefined>(undefined)
 
   // 生成随机食物位置
   const generateFood = useCallback((currentSnake: Position[]) => {
