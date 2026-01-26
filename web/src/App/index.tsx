@@ -4,9 +4,10 @@ import { GameItem } from '../components/GameItem'
 import { SearchBar } from '../components/SearchBar'
 import { SteamSearch } from '../components/SteamSearch'
 import { Settings } from '../components/Settings'
+import { MiniGames } from '../components/MiniGames'
 import type { Game, GameStatus } from '../types'
 import { AnimatePresence, motion } from 'framer-motion'
-import { SettingsIcon, Loader2, Play, Bookmark, CheckCircle } from 'lucide-react'
+import { SettingsIcon, Loader2, Play, Bookmark, CheckCircle, Gamepad2 } from 'lucide-react'
 import { githubService } from '../services/github'
 import { steamService } from '../services/steam'
 import { handleSteamCallback } from '../services/steamAuth'
@@ -20,7 +21,9 @@ function App() {
   const [isLoading, setIsLoading] = useState(false)
   const [showSteamSearch, setShowSteamSearch] = useState(false)
   const [showSettings, setShowSettings] = useState(false)
-  const [activeTab, setActiveTab] = useState<'playing' | 'queueing' | 'completion'>('playing')
+  const [activeTab, setActiveTab] = useState<
+    'playing' | 'queueing' | 'completion' | 'minigames'
+  >('playing')
 
   // Handle Steam login callback
   useEffect(() => {
@@ -559,10 +562,24 @@ function App() {
                 <CheckCircle size={16} />
                 Completion ({groupedGames.completion.length})
               </button>
+              <button
+                data-status="minigames"
+                onClick={() => setActiveTab('minigames')}
+                className={classNames(styles.tabBtn, {
+                  [styles.active]: activeTab === 'minigames',
+                  [styles.activeMiniGames]: activeTab === 'minigames',
+                })}
+              >
+                <Gamepad2 size={16} />
+                小游戏
+              </button>
             </div>
 
-            {/* Game List */}
-            <div className={styles.gameList}>
+            {/* Game List or MiniGames */}
+            {activeTab === 'minigames' ? (
+              <MiniGames />
+            ) : (
+              <div className={styles.gameList}>
               <AnimatePresence mode="wait">
                 {groupedGames[activeTab].length > 0 ? (
                   groupedGames[activeTab].map((game) => (
@@ -596,9 +613,12 @@ function App() {
                   </motion.div>
                 )}
               </AnimatePresence>
-            </div>
+              </div>
+            )}
 
-            {games.length === 0 && <div className={styles.emptyState}>队列中暂无游戏</div>}
+            {activeTab !== 'minigames' && games.length === 0 && (
+              <div className={styles.emptyState}>队列中暂无游戏</div>
+            )}
           </div>
         )}
       </main>
