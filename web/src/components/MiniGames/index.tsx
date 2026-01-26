@@ -33,21 +33,34 @@ export const MiniGames: React.FC = () => {
 
   return (
     <>
-      <div className={styles.miniGamesContainer}>
-        <div className={styles.gamesGrid}>
-          {miniGames.map((game) => (
-            <div
-              key={game.id}
-              className={styles.gameCard}
-              onClick={() => handlePlayGame(game.id)}
-              style={{ background: game.color }}
-            >
-              <div className={styles.gameIcon}>{game.icon}</div>
-              <h3 className={styles.gameName}>{game.name}</h3>
-              <p className={styles.gameDescription}>{game.description}</p>
-              <div className={styles.playBtn}>开始游戏 ▶</div>
-            </div>
-          ))}
+      <div className={styles.playgroundContainer}>
+        <div className={styles.playgroundHeader}>
+          <div className={styles.headerContent}>
+            <h2 className={styles.title}>🎮 游戏广场</h2>
+            <p className={styles.subtitle}>休息一下，来玩个小游戏放松一下吧</p>
+          </div>
+        </div>
+
+        <div className={styles.gamesSection}>
+          <div className={styles.gamesGrid}>
+            {miniGames.map((game) => (
+              <div
+                key={game.id}
+                className={styles.gameCard}
+                onClick={() => handlePlayGame(game.id)}
+              >
+                <div className={styles.cardInner} style={{ background: game.color }}>
+                  <div className={styles.gameIcon}>{game.icon}</div>
+                  <h3 className={styles.gameName}>{game.name}</h3>
+                  <p className={styles.gameDescription}>{game.description}</p>
+                  <div className={styles.playBtn}>
+                    <span>开始游戏</span>
+                    <span className={styles.playIcon}>▶</span>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
 
