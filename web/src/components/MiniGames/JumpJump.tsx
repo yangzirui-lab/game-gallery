@@ -123,7 +123,7 @@ export const JumpJump: React.FC<{ onClose: () => void }> = ({ onClose }) => {
 
     // 碰撞检测（使用传感器，需要手动控制位置）
     Matter.Events.on(engine, 'collisionStart', (event: Matter.IEventCollision<Matter.Engine>) => {
-      event.pairs.forEach((pair: Matter.IPair) => {
+      event.pairs.forEach((pair: Matter.Pair) => {
         const { bodyA, bodyB } = pair
 
         // 检查是否是玩家与平台的碰撞
