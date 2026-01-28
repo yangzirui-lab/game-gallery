@@ -85,3 +85,25 @@ jobs:
           user_name: 'github-actions[bot]'
           user_email: 'github-actions[bot]@users.noreply.github.com'
           commit_message: 'Deploy frontend build ${{ github.sha }}'
+
+      - name: Deploy to Windows Server via SCP
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.WINDOWS_SERVER_HOST }}
+          username: ${{ secrets.WINDOWS_SERVER_USERNAME }}
+          password: ${{ secrets.WINDOWS_SERVER_PASSWORD }}
+          port: 22
+          source: "./web/dist/*"
+          target: ${{ secrets.DEPLOY_PATH }}
+          strip_components: 2
+          rm: true
+
+      - name: Restart IIS Website
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.WINDOWS_SERVER_HOST }}
+          username: ${{ secrets.WINDOWS_SERVER_USERNAME }}
+          password: ${{ secrets.WINDOWS_SERVER_PASSWORD }}
+          port: 22
+          script: |
+            powershell -Command "Import-Module WebAdministration; Stop-Website -Name 'game-gallery'; Start-Website -Name 'game-gallery'"
