@@ -81,7 +81,21 @@ jobs:
           user_email: 'github-actions[bot]@users.noreply.github.com'
           commit_message: 'Deploy frontend build ${{ github.sha }}'
 
-      # 通过SSH触发服务器部署
+      # 通过SSH推送前端文件到服务器
+      - name: Push Frontend to Server
+        uses: appleboy/scp-action@master
+        continue-on-error: true
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.SSH_PORT || 22 }}
+          source: "./web/dist/*"
+          target: "/opt/game-gallery/web/"
+          strip_components: 2
+          rm: true
+
+      # 通过SSH部署配置文件和启动服务
       - name: Deploy to Linux Server
         uses: appleboy/ssh-action@master
         continue-on-error: true
@@ -91,36 +105,52 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: ${{ secrets.SSH_PORT || 22 }}
           script: |
-            # 创建部署目录（如果不存在）
-            mkdir -p /opt/game-gallery
+            # 创建部署目录
+            mkdir -p /opt/game-gallery/backend
             cd /opt/game-gallery
-
-            # 下载部署脚本（如果不存在）
-            if [ ! -f deploy-linux.sh ]; then
-              echo "Initializing deployment environment..."
-              curl -fsSL -o deploy-linux.sh https://raw.githubusercontent.com/yangzirui-lab/game-gallery/main/deploy-linux.sh
-              chmod +x deploy-linux.sh
-            fi
 
             # 下载配置文件（如果不存在）
             if [ ! -f docker-compose.yml ]; then
+              echo "Downloading docker-compose.yml..."
               curl -fsSL -o docker-compose.yml https://raw.githubusercontent.com/yangzirui-lab/game-gallery/main/docker-compose.yml
+              sed -i '/^version:/d' docker-compose.yml
             fi
 
-            if [ ! -f nginx-prod.conf ]; then
-              curl -fsSL -o nginx-prod.conf https://raw.githubusercontent.com/yangzirui-lab/game-gallery/main/nginx-prod.conf
+            if [ ! -f nginx.conf ]; then
+              echo "Downloading nginx.conf..."
+              curl -fsSL -o nginx.conf https://raw.githubusercontent.com/yangzirui-lab/game-gallery/main/nginx-prod.conf
             fi
 
             # 检查后端环境变量文件
             if [ ! -f backend/.env ]; then
               echo "⚠️  WARNING: backend/.env not found!"
               echo "Please create /opt/game-gallery/backend/.env with required configuration"
-              echo "See backend/.env.example for reference"
               exit 1
             fi
 
-            # 执行部署
-            bash deploy-linux.sh
+            # 拉取最新后端镜像
+            echo "Pulling latest backend image..."
+            docker pull ghcr.io/yangzirui-lab/game-gallery/backend:latest
+
+            # 重启服务
+            echo "Restarting services..."
+            docker-compose down
+            docker-compose up -d backend nginx
+
+            # 等待服务启动
+            sleep 5
+
+            # 检查状态
+            echo "Container status:"
+            docker-compose ps
+
+            # 健康检查
+            if curl -sf http://localhost/health > /dev/null; then
+              echo "✅ Deployment successful!"
+            else
+              echo "⚠️  Service started but health check failed"
+              docker-compose logs --tail=50
+            fi
 
       - name: Deployment Status
         run: |
