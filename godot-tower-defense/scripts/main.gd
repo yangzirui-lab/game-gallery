@@ -1,6 +1,7 @@
 extends Node2D
 
 const ENEMY = preload("res://scenes/enemy.tscn")
+const TOWER = preload("res://scenes/tower.tscn")
 
 @export var spawn_interval := 2.0
 @export var wave_size := 10
@@ -41,6 +42,7 @@ func spawn_enemy():
 	enemy.reached_end.connect(_on_enemy_reached_end)
 	add_child(enemy)
 	enemies_spawned += 1
+	print("生成敌人 #", enemies_spawned, " 位置: ", enemy.position)
 
 	if enemies_spawned >= wave_size:
 		wave_in_progress = false
@@ -80,6 +82,42 @@ func game_over():
 func _on_tower_button_pressed(tower_type):
 	selected_tower_type = tower_type
 	placeable = true
+
+func place_tower(pos: Vector2):
+	var tower_cost = 50
+	var tower_stats = {
+		"attack_range": 200.0,
+		"attack_speed": 1.0,
+		"damage": 25.0,
+		"bullet_speed": 400.0
+	}
+
+	if selected_tower_type == "rapid":
+		tower_cost = 100
+		tower_stats = {
+			"attack_range": 180.0,
+			"attack_speed": 2.0,
+			"damage": 15.0,
+			"bullet_speed": 500.0
+		}
+
+	if money < tower_cost:
+		print("金钱不足！")
+		return
+
+	var tower = TOWER.instantiate()
+	tower.position = pos
+	tower.attack_range = tower_stats.attack_range
+	tower.attack_speed = tower_stats.attack_speed
+	tower.damage = tower_stats.damage
+	tower.bullet_speed = tower_stats.bullet_speed
+	tower_container.add_child(tower)
+
+	money -= tower_cost
+	ui.update_money(money)
+
+	placeable = false
+	selected_tower_type = null
 
 func _unhandled_input(event):
 	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
