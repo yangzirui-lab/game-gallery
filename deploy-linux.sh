@@ -67,12 +67,47 @@ log_info "[2/5] Downloading frontend build from dist branch..."
 mkdir -p "$TEMP_DIR"
 cd "$TEMP_DIR"
 
-if git clone --branch dist --depth 1 https://github.com/yangzirui-lab/game-gallery.git .; then
-    log_info "Frontend build downloaded successfully"
-else
-    log_error "Failed to download frontend build"
-    rm -rf "$TEMP_DIR"
-    exit 1
+# 配置 git 以提高稳定性
+git config --global http.postBuffer 524288000
+git config --global http.lowSpeedLimit 0
+git config --global http.lowSpeedTime 999999
+
+# 尝试克隆，最多重试 3 次
+RETRY_COUNT=0
+MAX_RETRIES=3
+SUCCESS=false
+
+while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
+    log_info "Attempt $((RETRY_COUNT + 1))/$MAX_RETRIES to download frontend..."
+
+    if git clone --branch dist --depth 1 --single-branch https://github.com/yangzirui-lab/game-gallery.git .; then
+        SUCCESS=true
+        log_info "Frontend build downloaded successfully"
+        break
+    else
+        RETRY_COUNT=$((RETRY_COUNT + 1))
+        if [ $RETRY_COUNT -lt $MAX_RETRIES ]; then
+            log_warn "Download failed, retrying in 5 seconds..."
+            sleep 5
+        fi
+    fi
+done
+
+if [ "$SUCCESS" = false ]; then
+    log_error "Failed to download frontend build after $MAX_RETRIES attempts"
+    log_info "Trying alternative method (GitHub API)..."
+
+    # 备用方案：使用 GitHub API 下载
+    cd "$TEMP_DIR"
+    if curl -fsSL -o dist.tar.gz "https://github.com/yangzirui-lab/game-gallery/archive/refs/heads/dist.tar.gz"; then
+        tar -xzf dist.tar.gz --strip-components=1
+        rm dist.tar.gz
+        log_info "Frontend downloaded via GitHub API"
+    else
+        log_error "All download methods failed"
+        rm -rf "$TEMP_DIR"
+        exit 1
+    fi
 fi
 
 # 步骤3: 部署前端文件
