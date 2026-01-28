@@ -1,0 +1,77 @@
+version: '3.8'
+
+services:
+  # Go后端服务
+  backend:
+    image: ghcr.io/yangzirui-lab/game-gallery/backend:latest
+    container_name: game-gallery-backend
+    ports:
+      - '8080:8080'
+    env_file:
+      - ./backend/.env
+    restart: unless-stopped
+    networks:
+      - game-gallery-network
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # 前端服务（开发模式）
+  frontend-dev:
+    build:
+      context: ./web
+      dockerfile: Dockerfile.dev
+    container_name: game-gallery-frontend-dev
+    ports:
+      - '5173:5173'
+    environment:
+      - VITE_API_URL=http://localhost:8080
+    volumes:
+      - ./web:/app
+      - /app/node_modules
+    restart: unless-stopped
+    networks:
+      - game-gallery-network
+    depends_on:
+      - backend
+    profiles:
+      - dev
+
+  # 前端服务（生产模式 - 静态文件）
+  frontend:
+    image: ghcr.io/yangzirui-lab/game-gallery/frontend:latest
+    container_name: game-gallery-frontend
+    restart: unless-stopped
+    networks:
+      - game-gallery-network
+    profiles:
+      - prod
+
+  # Nginx反向代理
+  nginx:
+    image: nginx:alpine
+    container_name: game-gallery-nginx
+    ports:
+      - '80:80'
+      - '443:443'
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx-prod.conf:/etc/nginx/nginx-prod.conf:ro
+      - ./certs:/etc/nginx/certs:ro
+      - ./web/dist:/usr/share/nginx/html:ro
+    restart: unless-stopped
+    networks:
+      - game-gallery-network
+    depends_on:
+      - backend
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+networks:
+  game-gallery-network:
+    driver: bridge

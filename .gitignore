@@ -19,3 +19,7 @@ web/.env.local
 # Vercel
 .vercel
 .env*.local
+
+# 部署文档（包含敏感信息，不纳入版本控制）
+DEPLOYMENT-LINUX.md
+DEPLOYMENT*.md
