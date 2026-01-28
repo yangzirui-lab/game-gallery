@@ -81,11 +81,7 @@ jobs:
           user_email: 'github-actions[bot]@users.noreply.github.com'
           commit_message: 'Deploy frontend build ${{ github.sha }}'
 
-      # 压缩前端文件
-      - name: Compress Frontend Files
-        run: tar -czf frontend.tar.gz -C ./web/dist .
-
-      # 通过SSH推送压缩包到服务器
+      # 通过SSH推送前端文件到服务器
       - name: Push Frontend to Server
         uses: appleboy/scp-action@v0.1.7
         with:
@@ -93,8 +89,10 @@ jobs:
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: ${{ secrets.SSH_PORT || 22 }}
-          source: "frontend.tar.gz"
-          target: "/tmp/"
+          source: "./web/dist/*"
+          target: "/tmp/game-gallery-frontend/"
+          strip_components: 2
+          rm: true
           timeout: 5m
           command_timeout: 5m
 
@@ -112,20 +110,21 @@ jobs:
             mkdir -p /opt/game-gallery/backend
             cd /opt/game-gallery
 
-            # 解压前端文件
-            if [ -f /tmp/frontend.tar.gz ]; then
-              echo "Extracting frontend files..."
+            # 部署前端文件
+            if [ -d /tmp/game-gallery-frontend ]; then
+              echo "Deploying frontend files..."
               mkdir -p /opt/game-gallery/web/dist
-              tar -xzf /tmp/frontend.tar.gz -C /opt/game-gallery/web/dist/
-              rm -f /tmp/frontend.tar.gz
+              rm -rf /opt/game-gallery/web/dist/*
+              mv /tmp/game-gallery-frontend/* /opt/game-gallery/web/dist/
+              rmdir /tmp/game-gallery-frontend
 
               # 修正文件权限
               echo "Fixing file permissions..."
               chown -R deploy:deploy /opt/game-gallery/web
 
-              echo "✅ Frontend files extracted"
+              echo "✅ Frontend files deployed"
             else
-              echo "⚠️  Frontend archive not found, skipping..."
+              echo "⚠️  Frontend files not found, skipping..."
             fi
 
             # 下载/更新配置文件
