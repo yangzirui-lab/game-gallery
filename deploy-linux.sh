@@ -127,19 +127,31 @@ log_info "Frontend files deployed to $DEPLOY_DIR/web/dist"
 # 清理临时目录
 rm -rf "$TEMP_DIR"
 
-# 步骤4: 更新docker-compose配置
+# 步骤4: 更新配置文件和服务
 echo ""
-log_info "[4/5] Updating services..."
+log_info "[4/5] Updating configuration and services..."
 cd "$DEPLOY_DIR"
+
+# 下载最新的配置文件
+log_info "Updating docker-compose.yml..."
+if curl -fsSL -o docker-compose.yml https://raw.githubusercontent.com/yangzirui-lab/game-gallery/main/docker-compose.yml; then
+    # 移除 version 字段（Docker Compose v2 不需要）
+    sed -i.bak '/^version:/d' docker-compose.yml && rm -f docker-compose.yml.bak
+    log_info "docker-compose.yml updated"
+else
+    log_warn "Failed to update docker-compose.yml"
+fi
+
+log_info "Updating nginx.conf..."
+if curl -fsSL -o nginx.conf https://raw.githubusercontent.com/yangzirui-lab/game-gallery/main/nginx.conf; then
+    log_info "nginx.conf updated"
+else
+    log_warn "Failed to update nginx.conf"
+fi
 
 # 检查.env文件
 if [ ! -f "$DEPLOY_DIR/backend/.env" ]; then
     log_warn "Backend .env file not found, please create it before starting services"
-fi
-
-# 使用生产配置的nginx
-if [ -f "$DEPLOY_DIR/nginx-prod.conf" ]; then
-    cp "$DEPLOY_DIR/nginx-prod.conf" "$DEPLOY_DIR/nginx.conf"
 fi
 
 # 重启服务
