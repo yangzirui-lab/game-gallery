@@ -13,7 +13,11 @@
     "prepare": "husky || true"
   },
   "lint-staged": {
-    "*.{js,jsx,ts,tsx,json,css,scss,md}": [
+    "apps/web/**/*.{js,jsx,ts,tsx}": [
+      "eslint --config apps/web/eslint.config.js --fix",
+      "prettier --write"
+    ],
+    "*.{json,css,scss,md}": [
       "prettier --write"
     ]
   },

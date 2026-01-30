@@ -1,0 +1,10 @@
+#!/bin/sh
+. "$(dirname "$0")/_/husky.sh"
+
+# 类型检查
+echo "Running type check..."
+cd apps/web && npm run type-check
+
+# ESLint 检查
+echo "Running ESLint..."
+npm run lint
