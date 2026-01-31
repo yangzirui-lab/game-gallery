@@ -63,6 +63,19 @@
     .spinner {
       animation: spin 1s linear infinite;
     }
+
+    @media (max-width: 768px) {
+      width: 36px;
+      height: 36px;
+      opacity: 1;
+    }
+
+    @media (max-width: 480px) {
+      width: 40px;
+      height: 40px;
+      bottom: 0.5rem;
+      right: 0.5rem;
+    }
   }
 
   .pinBtnAbsolute {
@@ -110,6 +123,19 @@
 
     .spinner {
       animation: spin 1s linear infinite;
+    }
+
+    @media (max-width: 768px) {
+      width: 36px;
+      height: 36px;
+      opacity: 1;
+    }
+
+    @media (max-width: 480px) {
+      width: 40px;
+      height: 40px;
+      top: 0.5rem;
+      right: 0.5rem;
     }
   }
 

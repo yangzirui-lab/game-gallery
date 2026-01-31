@@ -379,6 +379,29 @@ export const Breakout: React.FC<{ onClose: () => void }> = ({ onClose }) => {
     }
   }
 
+  // 触摸控制
+  const handleTouchMove = (e: React.TouchEvent<HTMLCanvasElement>) => {
+    e.preventDefault()
+    const canvas = canvasRef.current
+    if (!canvas) return
+
+    const rect = canvas.getBoundingClientRect()
+    const touch = e.touches[0]
+    const touchX = touch.clientX - rect.left
+
+    if (touchX > PADDLE_WIDTH / 2 && touchX < CANVAS_WIDTH - PADDLE_WIDTH / 2) {
+      paddleXRef.current = touchX - PADDLE_WIDTH / 2
+    }
+  }
+
+  // 触摸开始游戏
+  const handleTouchStart = (e: React.TouchEvent<HTMLCanvasElement>) => {
+    if (gameStatus === 'ready') {
+      e.preventDefault()
+      startGame()
+    }
+  }
+
   // 下一关
   const nextLevel = () => {
     if (currentLevel < LEVELS.length - 1) {
@@ -422,14 +445,16 @@ export const Breakout: React.FC<{ onClose: () => void }> = ({ onClose }) => {
             height={CANVAS_HEIGHT}
             className={styles.canvas}
             onMouseMove={handleMouseMove}
+            onTouchMove={handleTouchMove}
+            onTouchStart={handleTouchStart}
           />
 
           {gameStatus === 'ready' && (
             <div className={styles.messageOverlay}>
               <div className={styles.message}>
                 <h3>准备开始</h3>
-                <p>按空格键开始</p>
-                <p className={styles.hint}>方向键或 A/D 移动挡板</p>
+                <p>按空格键或触摸屏幕开始</p>
+                <p className={styles.hint}>方向键/鼠标/触摸移动挡板</p>
                 <p className={styles.hint}>P 暂停游戏</p>
               </div>
             </div>
@@ -479,7 +504,7 @@ export const Breakout: React.FC<{ onClose: () => void }> = ({ onClose }) => {
         </div>
 
         <div className={styles.instructions}>
-          <p>使用方向键或鼠标移动挡板</p>
+          <p>使用方向键/鼠标/触摸移动挡板</p>
           <p>打碎所有砖块通关</p>
           <p>P 键暂停游戏</p>
         </div>

@@ -590,7 +590,7 @@ export const FruitCatcher: React.FC<{ onClose: () => void }> = ({ onClose }) => 
             <div className={styles.messageOverlay}>
               <div className={styles.message}>
                 <h3>准备开始</h3>
-                <p>使用方向键或鼠标移动篮子</p>
+                <p>使用方向键/鼠标/触摸移动篮子</p>
                 <p className={styles.hint}>接住水果得分，躲避炸弹💣</p>
                 <p className={styles.hint}>⭐黄金水果 ❄️时间减速 ✨双倍得分</p>
                 <button onClick={startGame} className={styles.btn}>
@@ -622,7 +622,7 @@ export const FruitCatcher: React.FC<{ onClose: () => void }> = ({ onClose }) => 
         </div>
 
         <div className={styles.instructions}>
-          <p>方向键或鼠标移动篮子 | 接住水果得分，躲避炸弹💣</p>
+          <p>方向键/鼠标/触摸移动篮子 | 接住水果得分，躲避炸弹💣</p>
           <p>特殊道具: ⭐+50分 | ❄️减速 | ✨双倍 | 连续接住累积连击奖励</p>
         </div>
       </div>

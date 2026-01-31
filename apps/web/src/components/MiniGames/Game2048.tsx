@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react'
+import React, { useState, useEffect, useCallback, useRef } from 'react'
 import styles from './Game2048.module.scss'
 
 type Direction = 'UP' | 'DOWN' | 'LEFT' | 'RIGHT'
@@ -14,6 +14,8 @@ export const Game2048: React.FC<{ onClose: () => void }> = ({ onClose }) => {
   const [gameStarted, setGameStarted] = useState(false)
   const [mergedTiles, setMergedTiles] = useState<Set<string>>(new Set())
   const [newTiles, setNewTiles] = useState<Set<string>>(new Set())
+  const touchStartRef = useRef<{ x: number; y: number } | null>(null)
+  const boardRef = useRef<HTMLDivElement>(null)
 
   function initializeBoard(): Board {
     const newBoard = Array(GRID_SIZE)
@@ -263,6 +265,65 @@ export const Game2048: React.FC<{ onClose: () => void }> = ({ onClose }) => {
     return () => window.removeEventListener('keydown', handleKeyPress)
   }, [handleMove, gameOver, gameStarted])
 
+  // 触摸控制
+  useEffect(() => {
+    const boardElement = boardRef.current
+    if (!boardElement) return
+
+    const handleTouchStart = (e: TouchEvent) => {
+      const touch = e.touches[0]
+      touchStartRef.current = { x: touch.clientX, y: touch.clientY }
+
+      // 触摸开始游戏
+      if (!gameStarted) {
+        e.preventDefault()
+        setGameStarted(true)
+      }
+    }
+
+    const handleTouchEnd = (e: TouchEvent) => {
+      if (!touchStartRef.current) return
+      if (gameOver) return
+
+      const touch = e.changedTouches[0]
+      const deltaX = touch.clientX - touchStartRef.current.x
+      const deltaY = touch.clientY - touchStartRef.current.y
+
+      // 滑动阈值
+      const threshold = 30
+
+      // 判断滑动方向
+      if (Math.abs(deltaX) > threshold || Math.abs(deltaY) > threshold) {
+        if (Math.abs(deltaX) > Math.abs(deltaY)) {
+          // 横向滑动
+          if (deltaX > 0) {
+            handleMove('RIGHT')
+          } else {
+            handleMove('LEFT')
+          }
+        } else {
+          // 纵向滑动
+          if (deltaY > 0) {
+            handleMove('DOWN')
+          } else {
+            handleMove('UP')
+          }
+        }
+        e.preventDefault()
+      }
+
+      touchStartRef.current = null
+    }
+
+    boardElement.addEventListener('touchstart', handleTouchStart, { passive: false })
+    boardElement.addEventListener('touchend', handleTouchEnd, { passive: false })
+
+    return () => {
+      boardElement.removeEventListener('touchstart', handleTouchStart)
+      boardElement.removeEventListener('touchend', handleTouchEnd)
+    }
+  }, [handleMove, gameOver, gameStarted])
+
   const getTileColor = (value: number): string => {
     const colors: Record<number, string> = {
       2: '#eee4da',
@@ -301,7 +362,7 @@ export const Game2048: React.FC<{ onClose: () => void }> = ({ onClose }) => {
           </button>
         </div>
 
-        <div className={styles.board}>
+        <div ref={boardRef} className={styles.board}>
           {board.map((row, i) =>
             row.map((value, j) => {
               const tileKey = `${i}-${j}`
@@ -344,9 +405,9 @@ export const Game2048: React.FC<{ onClose: () => void }> = ({ onClose }) => {
             <div className={styles.messageOverlay}>
               <div className={styles.message}>
                 <h3>2048</h3>
-                <p>使用方向键移动方块</p>
+                <p>使用方向键或滑动屏幕移动方块</p>
                 <p>相同数字的方块会合并</p>
-                <p>按空格键开始游戏</p>
+                <p>按空格键或触摸屏幕开始游戏</p>
               </div>
             </div>
           )}
@@ -378,7 +439,7 @@ export const Game2048: React.FC<{ onClose: () => void }> = ({ onClose }) => {
 
         <div className={styles.controls}>
           <div className={styles.instructions}>
-            <p>🎮 方向键: 移动方块</p>
+            <p>🎮 方向键/滑动: 移动方块</p>
             <p>⏸️ 空格键: 开始游戏</p>
           </div>
         </div>

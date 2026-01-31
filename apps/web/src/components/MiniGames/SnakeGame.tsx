@@ -18,6 +18,8 @@ export const SnakeGame: React.FC<{ onClose: () => void }> = ({ onClose }) => {
   const [gameStarted, setGameStarted] = useState(false)
   const directionRef = useRef(direction)
   const gameLoopRef = useRef<number | undefined>(undefined)
+  const touchStartRef = useRef<{ x: number; y: number } | null>(null)
+  const gridRef = useRef<HTMLDivElement>(null)
 
   // 生成随机食物位置
   const generateFood = useCallback((currentSnake: Position[]) => {
@@ -142,6 +144,72 @@ export const SnakeGame: React.FC<{ onClose: () => void }> = ({ onClose }) => {
     return () => window.removeEventListener('keydown', handleKeyPress)
   }, [gameStarted, gameOver, resetGame])
 
+  // 触摸控制
+  useEffect(() => {
+    const grid = gridRef.current
+    if (!grid) return
+
+    const handleTouchStart = (e: TouchEvent) => {
+      const touch = e.touches[0]
+      touchStartRef.current = { x: touch.clientX, y: touch.clientY }
+
+      // 触摸开始游戏
+      if (!gameStarted) {
+        e.preventDefault()
+        resetGame()
+      }
+    }
+
+    const handleTouchEnd = (e: TouchEvent) => {
+      if (!touchStartRef.current) return
+      if (gameOver) return
+
+      const touch = e.changedTouches[0]
+      const deltaX = touch.clientX - touchStartRef.current.x
+      const deltaY = touch.clientY - touchStartRef.current.y
+
+      // 滑动阈值
+      const threshold = 30
+
+      // 判断滑动方向
+      if (Math.abs(deltaX) > threshold || Math.abs(deltaY) > threshold) {
+        let newDirection: Direction | null = null
+
+        if (Math.abs(deltaX) > Math.abs(deltaY)) {
+          // 横向滑动
+          if (deltaX > 0 && directionRef.current !== 'LEFT') {
+            newDirection = 'RIGHT'
+          } else if (deltaX < 0 && directionRef.current !== 'RIGHT') {
+            newDirection = 'LEFT'
+          }
+        } else {
+          // 纵向滑动
+          if (deltaY > 0 && directionRef.current !== 'UP') {
+            newDirection = 'DOWN'
+          } else if (deltaY < 0 && directionRef.current !== 'DOWN') {
+            newDirection = 'UP'
+          }
+        }
+
+        if (newDirection) {
+          e.preventDefault()
+          directionRef.current = newDirection
+          setDirection(newDirection)
+        }
+      }
+
+      touchStartRef.current = null
+    }
+
+    grid.addEventListener('touchstart', handleTouchStart, { passive: false })
+    grid.addEventListener('touchend', handleTouchEnd, { passive: false })
+
+    return () => {
+      grid.removeEventListener('touchstart', handleTouchStart)
+      grid.removeEventListener('touchend', handleTouchEnd)
+    }
+  }, [gameStarted, gameOver, resetGame])
+
   return (
     <div className={styles.overlay}>
       <div className={styles.gameContainer}>
@@ -162,6 +230,7 @@ export const SnakeGame: React.FC<{ onClose: () => void }> = ({ onClose }) => {
         </div>
 
         <div
+          ref={gridRef}
           className={styles.grid}
           style={{
             width: GRID_SIZE * CELL_SIZE,
@@ -198,8 +267,8 @@ export const SnakeGame: React.FC<{ onClose: () => void }> = ({ onClose }) => {
             <div className={styles.overlay}>
               <div className={styles.message}>
                 <h3>贪吃蛇</h3>
-                <p>使用方向键控制蛇的移动</p>
-                <p>按空格键开始游戏</p>
+                <p>使用方向键或滑动屏幕控制蛇的移动</p>
+                <p>按空格键或触摸屏幕开始游戏</p>
               </div>
             </div>
           )}
@@ -228,7 +297,7 @@ export const SnakeGame: React.FC<{ onClose: () => void }> = ({ onClose }) => {
 
         <div className={styles.controls}>
           <div className={styles.instructions}>
-            <p>🎮 方向键: 控制方向</p>
+            <p>🎮 方向键/滑动: 控制方向</p>
             <p>⏸️ 空格键: 暂停/继续</p>
           </div>
         </div>

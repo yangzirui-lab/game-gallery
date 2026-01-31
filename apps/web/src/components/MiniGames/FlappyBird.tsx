@@ -249,6 +249,12 @@ export const FlappyBird: React.FC<{ onClose: () => void }> = ({ onClose }) => {
     jump()
   }
 
+  // 触摸控制
+  const handleTouchStart = (e: React.TouchEvent<HTMLCanvasElement>) => {
+    e.preventDefault()
+    jump()
+  }
+
   // 重新开始
   const restart = () => {
     initGame()
@@ -277,15 +283,16 @@ export const FlappyBird: React.FC<{ onClose: () => void }> = ({ onClose }) => {
             height={CANVAS_HEIGHT}
             className={styles.canvas}
             onClick={handleClick}
+            onTouchStart={handleTouchStart}
           />
 
           {gameStatus === 'ready' && (
             <div className={styles.messageOverlay}>
               <div className={styles.message}>
                 <h3>🐦 准备起飞</h3>
-                <p>点击屏幕或按空格键开始</p>
+                <p>触摸/点击屏幕或按空格键开始</p>
                 <div className={styles.hintBox}>
-                  <p className={styles.hint}>💡 持续点击保持飞行高度</p>
+                  <p className={styles.hint}>💡 持续触摸/点击保持飞行高度</p>
                   <p className={styles.hint}>💡 通过绿色管道间隙得分</p>
                 </div>
               </div>
@@ -314,7 +321,7 @@ export const FlappyBird: React.FC<{ onClose: () => void }> = ({ onClose }) => {
         </div>
 
         <div className={styles.instructions}>
-          <p>🎮 点击屏幕或按空格键控制小鸟飞行</p>
+          <p>🎮 触摸/点击屏幕或按空格键控制小鸟飞行</p>
           <p>🏆 通过管道间隙获得分数，挑战更高纪录</p>
         </div>
       </div>
