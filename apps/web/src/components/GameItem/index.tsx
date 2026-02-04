@@ -337,7 +337,7 @@ export const GameItem: React.FC<GameItemProps> = ({
 
               <div className={styles.gameMeta}>
                 <div className={styles.metaRow}>
-                  {game.comingSoon ? (
+                  {game.comingSoon === true ? (
                     <span className={styles.metaRating}>
                       <span className={styles.unreleased}>尚未发售</span>
                     </span>
@@ -366,7 +366,7 @@ export const GameItem: React.FC<GameItemProps> = ({
                 </div>
                 {game.releaseDate && (
                   <div className={styles.releaseInfo}>
-                    {game.comingSoon ? (
+                    {game.comingSoon === true ? (
                       <span className={styles.comingSoon}>预计发售: {game.releaseDate}</span>
                     ) : (
                       <span className={styles.releaseDate}>发布于 {game.releaseDate}</span>

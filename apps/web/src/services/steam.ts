@@ -243,7 +243,7 @@ class SteamService {
 
     return {
       releaseDate: details.release_date?.date || null,
-      comingSoon: details.release_date?.coming_soon || null,
+      comingSoon: details.release_date?.coming_soon ?? null,
       isEarlyAccess,
       genres: details.genres || null,
     }
