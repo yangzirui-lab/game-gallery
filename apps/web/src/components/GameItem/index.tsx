@@ -355,34 +355,11 @@ export const GameItem: React.FC<GameItemProps> = ({
                           [styles.low]: game.positivePercentage < 60,
                         })}
                       >
-                        全球 {game.positivePercentage}%
+                        {game.positivePercentage}% 好评
                       </span>
                       <span className={styles.reviewCount}>
-                        ({game.totalReviews?.toLocaleString()})
+                        {game.totalReviews?.toLocaleString()} 条评论
                       </span>
-                      {game.chinesePositivePercentage !== undefined &&
-                        game.chinesePositivePercentage !== null && (
-                          <>
-                            <span className={styles.reviewSeparator}>|</span>
-                            <span
-                              className={classNames(styles.ratingPercentage, {
-                                [styles.high]: game.chinesePositivePercentage >= 80,
-                                [styles.medium]:
-                                  game.chinesePositivePercentage >= 60 &&
-                                  game.chinesePositivePercentage < 80,
-                                [styles.low]: game.chinesePositivePercentage < 60,
-                              })}
-                            >
-                              中文 {game.chinesePositivePercentage}%
-                            </span>
-                            {game.chineseTotalReviews !== undefined &&
-                              game.chineseTotalReviews !== null && (
-                                <span className={styles.reviewCount}>
-                                  ({game.chineseTotalReviews?.toLocaleString()})
-                                </span>
-                              )}
-                          </>
-                        )}
                     </span>
                   ) : (
                     <span className={styles.metaRatingLoading}>加载好评率中...</span>
