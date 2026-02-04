@@ -7,9 +7,9 @@ import { githubService } from '../services/github'
  * 游戏信息定时刷新 Hook
  *
  * 功能：
- * - 延迟 2 秒后进行首次刷新（优先刷新缺少好评率的游戏）
+ * - 延迟 2 秒后进行首次刷新（优先刷新缺少数据的游戏）
  * - 每 30 分钟自动刷新一次
- * - 从 Steam API 获取游戏的好评率、发布日期、抢先体验状态
+ * - 从 Steam API 获取游戏的好评率、发布日期、发售状态(comingSoon)、抢先体验状态
  * - 更新后统一保存到 GitHub（使用并发安全的 concurrentUpdateGames）
  * - 防止 API 限流（每个游戏之间延迟 1 秒）
  */
@@ -32,7 +32,7 @@ function useGameRefresh(games: Game[], onGamesUpdate: (games: Game[]) => void): 
 
       console.log(
         prioritizeMissing
-          ? '开始刷新游戏信息（包含所有游戏的抢先体验状态）...'
+          ? '开始刷新游戏信息（包含所有游戏的发售状态和抢先体验状态）...'
           : '开始刷新游戏好评率...'
       )
 
@@ -60,11 +60,14 @@ function useGameRefresh(games: Game[], onGamesUpdate: (games: Game[]) => void): 
         const appId = parseInt(match[1])
 
         try {
-          // 在首次刷新时，强制刷新所有游戏的抢先体验状态
-          // 在定期刷新时，只刷新缺少数据的游戏或已标记为抢先体验的游戏（确保游戏转正时能及时更新）
+          // 在首次刷新时，强制刷新所有游戏的发售状态和抢先体验状态
+          // 在定期刷新时，只刷新缺少数据的游戏（releaseDate/comingSoon/isEarlyAccess为null）
+          // 或已标记为抢先体验的游戏（确保游戏转正时能及时更新）
           const needsReleaseInfo =
             prioritizeMissing ||
             !game.releaseDate ||
+            game.comingSoon === null ||
+            game.comingSoon === undefined ||
             game.isEarlyAccess === null ||
             game.isEarlyAccess === undefined ||
             game.isEarlyAccess === true
@@ -93,11 +96,14 @@ function useGameRefresh(games: Game[], onGamesUpdate: (games: Game[]) => void): 
             game.positivePercentage === undefined ||
             game.releaseDate === null ||
             game.releaseDate === undefined ||
+            game.comingSoon === null ||
+            game.comingSoon === undefined ||
             game.isEarlyAccess === null ||
             game.isEarlyAccess === undefined ||
             reviews.positivePercentage !== game.positivePercentage ||
             reviews.totalReviews !== game.totalReviews ||
             (needsReleaseInfo && releaseInfo.releaseDate !== game.releaseDate) ||
+            (needsReleaseInfo && releaseInfo.comingSoon !== game.comingSoon) ||
             (needsReleaseInfo && releaseInfo.isEarlyAccess !== game.isEarlyAccess)
 
           if (
@@ -129,7 +135,7 @@ function useGameRefresh(games: Game[], onGamesUpdate: (games: Game[]) => void): 
             )
 
             console.log(
-              `已更新 ${game.name} 的信息: 好评率 ${reviews.positivePercentage}%, 发布日期 ${releaseInfo.releaseDate}, 抢先体验 ${releaseInfo.isEarlyAccess}`
+              `已更新 ${game.name} 的信息: 好评率 ${reviews.positivePercentage}%, 发布日期 ${releaseInfo.releaseDate}, 未发售 ${releaseInfo.comingSoon}, 抢先体验 ${releaseInfo.isEarlyAccess}`
             )
           }
         } catch (err) {
@@ -140,7 +146,9 @@ function useGameRefresh(games: Game[], onGamesUpdate: (games: Game[]) => void): 
         await new Promise((resolve) => setTimeout(resolve, 1000))
       }
 
-      console.log(prioritizeMissing ? '游戏信息刷新完成（已刷新抢先体验状态）' : '好评率刷新完成')
+      console.log(
+        prioritizeMissing ? '游戏信息刷新完成（已刷新发售状态和抢先体验状态）' : '好评率刷新完成'
+      )
 
       // 所有游戏刷新完成后，统一保存一次到 GitHub
       if (!hasAnyUpdate) {
