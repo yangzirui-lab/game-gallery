@@ -53,11 +53,11 @@
       "steamUrl": "https://store.steampowered.com/app/413150",
       "coverImage": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/413150/capsule_231x87.jpg?t=1754692865",
       "positivePercentage": 98,
-      "totalReviews": 974097,
+      "totalReviews": 974111,
       "releaseDate": "2016 年 2 月 26 日",
       "isEarlyAccess": false,
       "chinesePositivePercentage": 98,
-      "chineseTotalReviews": 194355,
+      "chineseTotalReviews": 194363,
       "comingSoon": false
     },
     {
@@ -69,7 +69,7 @@
       "steamUrl": "https://store.steampowered.com/app/380600",
       "coverImage": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/380600/58dd792f1f11caeed351f3d4359e4de459a5c8d4/capsule_231x87.jpg?t=1767100678",
       "positivePercentage": 87,
-      "totalReviews": 72345,
+      "totalReviews": 72346,
       "releaseDate": "2017 年 8 月 28 日",
       "isEarlyAccess": false,
       "chinesePositivePercentage": 76,
@@ -88,7 +88,7 @@
       "comingSoon": false,
       "isEarlyAccess": false,
       "positivePercentage": 83,
-      "totalReviews": 931,
+      "totalReviews": 939,
       "chinesePositivePercentage": 69,
       "chineseTotalReviews": 88
     },
@@ -101,7 +101,7 @@
       "steamUrl": "https://store.steampowered.com/app/1857950",
       "coverImage": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1857950/a91648a3cbcf3cf55837439c42feb2879449eab0/capsule_231x87.jpg?t=1761862207",
       "positivePercentage": 90,
-      "totalReviews": 8392,
+      "totalReviews": 8393,
       "releaseDate": "2025 年 10 月 24 日",
       "isEarlyAccess": true,
       "genres": [
@@ -308,7 +308,7 @@
       "steamUrl": "https://store.steampowered.com/app/1631270",
       "coverImage": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1631270/capsule_231x87_schinese.jpg?t=1767955451",
       "positivePercentage": 81,
-      "totalReviews": 8283,
+      "totalReviews": 8287,
       "releaseDate": "2026 年 1 月 6 日",
       "isEarlyAccess": true,
       "chinesePositivePercentage": 49,
@@ -415,11 +415,11 @@
       "steamUrl": "https://store.steampowered.com/app/648800",
       "coverImage": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/648800/capsule_231x87.jpg?t=1727184011",
       "positivePercentage": 93,
-      "totalReviews": 364729,
+      "totalReviews": 364733,
       "releaseDate": "2022 年 6 月 20 日",
       "isEarlyAccess": false,
       "chinesePositivePercentage": 86,
-      "chineseTotalReviews": 43063,
+      "chineseTotalReviews": 43064,
       "comingSoon": false
     },
     {
