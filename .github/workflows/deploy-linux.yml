@@ -87,10 +87,6 @@ jobs:
               cp -r /tmp/game-gallery-frontend/* /opt/game-gallery/web/dist/
               rm -rf /tmp/game-gallery-frontend
 
-              # 修正文件权限
-              echo "Fixing file permissions..."
-              chown -R deploy:deploy /opt/game-gallery/web
-
               echo "Frontend files deployed successfully"
               echo "Files deployed to: /opt/game-gallery/web/dist"
               echo "Served by degenerates-backend nginx at: https://degenerates.site"
