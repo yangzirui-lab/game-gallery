@@ -39,7 +39,7 @@ jobs:
         working-directory: ./apps/web
         env:
           VITE_BASE_PATH: /
-          VITE_API_URL: https://degenerates.site/api
+          VITE_API_URL: https://degenerates.site
         run: npm run build
 
       - name: Deploy to dist branch
