@@ -40,7 +40,7 @@ export default defineConfig({
           'vendor-physics': ['matter-js'],
 
           // 服务层
-          services: ['./src/services/github', './src/services/steam', './src/services/steamAuth'],
+          services: ['./src/services/github', './src/services/steam', './src/services/auth'],
         },
 
         // 文件命名策略

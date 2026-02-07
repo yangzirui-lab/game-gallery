@@ -4,14 +4,17 @@
  */
 
 import { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
 import { handleAuthCallback } from '@/services/auth'
 import type { AuthResponse } from '@/types'
 
 // ==================== Component ====================
 
-function AuthCallback() {
-  const navigate = useNavigate()
+interface AuthCallbackProps {
+  onSuccess?: () => void
+  onError?: (error: string) => void
+}
+
+function AuthCallback({ onSuccess, onError }: AuthCallbackProps) {
   const [error, setError] = useState<string | null>(null)
   const [isProcessing, setIsProcessing] = useState(true)
 
@@ -25,6 +28,9 @@ function AuthCallback() {
       if (errorParam) {
         setError(errorParam)
         setIsProcessing(false)
+        if (onError) {
+          onError(errorParam)
+        }
         return
       }
 
@@ -44,16 +50,25 @@ function AuthCallback() {
           const success = handleAuthCallback(authData)
 
           if (success) {
-            // 登录成功，跳转到主页
-            navigate('/', { replace: true })
+            // 登录成功，清除 URL 参数并通知父组件
+            window.history.replaceState({}, document.title, window.location.pathname)
+            if (onSuccess) {
+              onSuccess()
+            }
           } else {
             setError('Failed to process authentication data')
             setIsProcessing(false)
+            if (onError) {
+              onError('Failed to process authentication data')
+            }
           }
         } catch (err) {
           console.error('[AuthCallback] Error parsing user data:', err)
           setError('Invalid authentication data')
           setIsProcessing(false)
+          if (onError) {
+            onError('Invalid authentication data')
+          }
         }
         return
       }
@@ -64,10 +79,13 @@ function AuthCallback() {
 
       setError('No authentication data received')
       setIsProcessing(false)
+      if (onError) {
+        onError('No authentication data received')
+      }
     }
 
     processCallback()
-  }, [navigate])
+  }, [onSuccess, onError])
 
   if (isProcessing) {
     return (
@@ -84,7 +102,7 @@ function AuthCallback() {
         <h2>Login Failed</h2>
         <p style={{ color: 'red' }}>{error}</p>
         <button
-          onClick={() => navigate('/', { replace: true })}
+          onClick={() => (window.location.href = '/')}
           style={{ marginTop: '20px', padding: '10px 20px', cursor: 'pointer' }}
         >
           Back to Home
