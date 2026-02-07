@@ -104,7 +104,7 @@ export const Settings: React.FC<SettingsProps> = ({ onClose }) => {
   }
 
   const handleSteamLogin = async () => {
-    await steamLogin(window.location.origin + '/auth/callback')
+    await steamLogin()
   }
 
   const handleSteamLogout = async () => {
