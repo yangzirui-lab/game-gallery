@@ -654,6 +654,20 @@ function App() {
         )}
       </main>
 
+      <footer className={styles.footer}>
+        <div className={styles.beian}>
+          <span>桂ICP备2026002060号</span>
+          <span className={styles.separator}>|</span>
+          <a
+            href="https://beian.mps.gov.cn/#/query/webSearch?code=45010502001153"
+            rel="noreferrer"
+            target="_blank"
+          >
+            桂公网安备45010502001153号
+          </a>
+        </div>
+      </footer>
+
       {showSteamSearch && (
         <Suspense fallback={<div />}>
           <SteamSearch
