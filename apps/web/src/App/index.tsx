@@ -370,23 +370,30 @@ function App() {
   }
 
   const handlePinGame = async (id: string) => {
-    // Happy Path: 游戏不存在
     const game = games.find((g) => g.id === id)
     if (!game) {
       return
     }
 
-    // 注意：后端暂未实现置顶功能的独立接口
     const newPinnedState = !game.isPinned
 
-    showToast('置顶功能暂未实现，请联系后端开发')
-
-    // 临时方案：仅在前端更新状态（页面刷新后会丢失）
+    // 乐观更新
     setGames((prevGames) =>
       prevGames.map((g) =>
         g.id === id ? { ...g, isPinned: newPinnedState, lastUpdated: new Date().toISOString() } : g
       )
     )
+
+    const result = await userGameService.updateUserGame(id, { is_pinned: newPinnedState })
+    if (!result) {
+      // 回滚
+      setGames((prevGames) =>
+        prevGames.map((g) => (g.id === id ? { ...g, isPinned: game.isPinned } : g))
+      )
+      showToast('操作失败，请重试')
+    } else {
+      showToast(newPinnedState ? '已置顶' : '已取消置顶')
+    }
   }
 
   const handleSearch = (term: string) => {
