@@ -43,6 +43,11 @@ function App() {
   const [showSettings, setShowSettings] = useState(false)
   const [mainTab, setMainTab] = useState<'steamgames' | 'playground'>('steamgames')
   const [activeTab, setActiveTab] = useState<'playing' | 'queueing' | 'completion'>('playing')
+  const [statusCounts, setStatusCounts] = useState<Record<GameStatus, number>>({
+    playing: 0,
+    queueing: 0,
+    completion: 0,
+  })
 
   // 分页状态
   const [playingPage, setPlayingPage] = useState(1)
@@ -75,12 +80,16 @@ function App() {
 
     // Happy Path: 获取失败或未登录
     if (!result) {
-      return { games: [], hasMore: false }
+      return { games: [], hasMore: false, totalCount: 0 }
     }
 
     // 转换为前端格式
     const games = mergeGameData(result.data, null)
-    return { games, hasMore: result.pagination.has_next }
+    return {
+      games,
+      hasMore: result.pagination.has_next,
+      totalCount: result.pagination.total_count,
+    }
   }
 
   // 初始化：加载所有状态的第一页
@@ -97,6 +106,11 @@ function App() {
       const allGames = [...playingResult.games, ...queueingResult.games, ...completionResult.games]
 
       setGames(allGames)
+      setStatusCounts({
+        playing: playingResult.totalCount,
+        queueing: queueingResult.totalCount,
+        completion: completionResult.totalCount,
+      })
       setHasMorePlaying(playingResult.hasMore)
       setHasMoreQueueing(queueingResult.hasMore)
       setHasMoreCompletion(completionResult.hasMore)
@@ -238,6 +252,7 @@ function App() {
     }
 
     setGames([newGame, ...games])
+    setStatusCounts((prev) => ({ ...prev, queueing: prev.queueing + 1 }))
     showToast(`从 Steam 添加了 "${name}"`)
     setHighlightId(newGame.id)
 
@@ -333,6 +348,14 @@ function App() {
       return
     }
 
+    if (updates.status && updates.status !== game.status) {
+      setStatusCounts((prev) => ({
+        ...prev,
+        [game.status]: Math.max(0, prev[game.status] - 1),
+        [updates.status!]: prev[updates.status!] + 1,
+      }))
+    }
+
     // 更新本地状态
     setGames((prevGames) =>
       prevGames.map((g) =>
@@ -366,6 +389,10 @@ function App() {
 
     // 更新本地状态
     setGames((prevGames) => prevGames.filter((g) => g.id !== id))
+    setStatusCounts((prev) => ({
+      ...prev,
+      [game.status]: Math.max(0, prev[game.status] - 1),
+    }))
     showToast(`移除了 "${game.name}"`)
   }
 
@@ -419,6 +446,11 @@ function App() {
     const allGames = [...playingResult.games, ...queueingResult.games, ...completionResult.games]
 
     setGames(allGames)
+    setStatusCounts({
+      playing: playingResult.totalCount,
+      queueing: queueingResult.totalCount,
+      completion: completionResult.totalCount,
+    })
     setPlayingPage(1)
     setQueueingPage(1)
     setCompletionPage(1)
@@ -580,7 +612,7 @@ function App() {
                   })}
                 >
                   <Play size={16} />
-                  Playing ({groupedGames.playing.length})
+                  Playing ({statusCounts.playing})
                 </button>
                 <button
                   data-status="queueing"
@@ -591,7 +623,7 @@ function App() {
                   })}
                 >
                   <Bookmark size={16} />
-                  Queueing ({groupedGames.queueing.length})
+                  Queueing ({statusCounts.queueing})
                 </button>
                 <button
                   data-status="completion"
@@ -602,7 +634,7 @@ function App() {
                   })}
                 >
                   <CheckCircle size={16} />
-                  Completion ({groupedGames.completion.length})
+                  Completion ({statusCounts.completion})
                 </button>
               </div>
               <button onClick={() => setShowSteamSearch(true)} className={styles.btnSteam}>
