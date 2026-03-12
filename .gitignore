@@ -31,3 +31,6 @@ DEPLOYMENT*.md
 
 # Godot编辑器
 godot-editor/
+
+# Codex
+.codex/environments
