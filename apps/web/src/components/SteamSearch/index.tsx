@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { Plus, X, Loader2 } from 'lucide-react'
 import classNames from 'classnames'
 import { steamService, type SteamGame } from '../../services/steam'
@@ -25,48 +25,83 @@ export const SteamSearch: React.FC<SteamSearchProps> = ({ onAddGame, onClose }) 
   const [isSearching, setIsSearching] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [addingGameId, setAddingGameId] = useState<number | null>(null)
+  const latestSearchRequestIdRef = useRef(0)
 
-  // 异步获取单个游戏的好评率和发布日期
-  const fetchGameReviews = async (game: SteamGame) => {
-    const [reviews, releaseInfo] = await Promise.all([
-      steamService.getGameReviews({ appId: game.id }),
-      steamService.getGameReleaseDate({ appId: game.id }),
-    ])
+  const ENRICH_MAX_COUNT = 6
+  const ENRICH_CONCURRENCY = 2
 
-    if (!reviews || !releaseInfo) {
-      console.warn(`Failed to fetch info for game ${game.id}`)
-      return
+  const enrichSearchResults = async (games: SteamGame[], requestId: number) => {
+    if (games.length === 0) return
+
+    let cursor = 0
+    const worker = async () => {
+      while (cursor < games.length) {
+        const index = cursor
+        cursor += 1
+        const game = games[index]
+
+        const [reviews, releaseInfo] = await Promise.all([
+          steamService.getGameReviews({ appId: game.id }),
+          steamService.getGameReleaseDate({ appId: game.id }),
+        ])
+
+        if (latestSearchRequestIdRef.current !== requestId) {
+          return
+        }
+
+        const hasAnyData =
+          reviews.positivePercentage !== null ||
+          reviews.totalReviews !== null ||
+          releaseInfo.releaseDate !== null ||
+          releaseInfo.isEarlyAccess !== null
+
+        if (!hasAnyData) {
+          continue
+        }
+
+        setResults((prevResults) =>
+          prevResults.map((g) =>
+            g.id === game.id
+              ? {
+                  ...g,
+                  positivePercentage: reviews.positivePercentage,
+                  totalReviews: reviews.totalReviews,
+                  releaseDate: releaseInfo.releaseDate,
+                  comingSoon: releaseInfo.comingSoon,
+                  isEarlyAccess: releaseInfo.isEarlyAccess,
+                }
+              : g
+          )
+        )
+      }
     }
 
-    // 更新该游戏的好评率和发布日期数据
-    setResults((prevResults) =>
-      prevResults.map((g) =>
-        g.id === game.id
-          ? {
-              ...g,
-              positivePercentage: reviews.positivePercentage,
-              totalReviews: reviews.totalReviews,
-              releaseDate: releaseInfo.releaseDate,
-              comingSoon: releaseInfo.comingSoon,
-              isEarlyAccess: releaseInfo.isEarlyAccess,
-            }
-          : g
-      )
-    )
+    const workerCount = Math.min(ENRICH_CONCURRENCY, games.length)
+    await Promise.all(Array.from({ length: workerCount }, () => worker()))
   }
 
   // 实时搜索：输入时自动搜索，带防抖
   useEffect(() => {
-    if (!query.trim()) {
+    const normalizedQuery = query.trim()
+    if (!normalizedQuery) {
       setResults([])
+      setError(null)
+      setIsSearching(false)
       return
     }
+
+    const requestId = latestSearchRequestIdRef.current + 1
+    latestSearchRequestIdRef.current = requestId
 
     setIsSearching(true)
     setError(null)
 
     const timer = setTimeout(async () => {
-      const games = await steamService.search({ query })
+      const games = await steamService.search({ query: normalizedQuery })
+
+      if (latestSearchRequestIdRef.current !== requestId) {
+        return
+      }
 
       if (games === null) {
         setError('搜索失败，请重试')
@@ -76,17 +111,14 @@ export const SteamSearch: React.FC<SteamSearchProps> = ({ onAddGame, onClose }) 
 
       setResults(games)
 
-      // 先显示基本信息，然后异步获取每个游戏的好评率
-      games.forEach((game) => {
-        fetchGameReviews(game)
-      })
-
       setIsSearching(false)
+
+      // 先显示基本信息，再限并发补齐评分/发售信息，避免瞬时请求过多
+      void enrichSearchResults(games.slice(0, ENRICH_MAX_COUNT), requestId)
     }, 500) // 500ms 防抖
 
     return () => {
       clearTimeout(timer)
-      setIsSearching(false)
     }
   }, [query])
 

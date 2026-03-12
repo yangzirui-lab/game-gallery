@@ -98,7 +98,37 @@ interface SteamAppDetails {
   }
 }
 
+interface CacheEntry<T> {
+  value: T
+  expiresAt: number
+}
+
 class SteamService {
+  private static readonly CACHE_TTL_MS = 10 * 60 * 1000
+  private reviewsCache = new Map<number, CacheEntry<GameReviewsInfo>>()
+  private releaseCache = new Map<number, CacheEntry<GameReleaseInfo>>()
+  private reviewsInflight = new Map<number, Promise<GameReviewsInfo>>()
+  private releaseInflight = new Map<number, Promise<GameReleaseInfo>>()
+
+  private getCachedValue<T>(cache: Map<number, CacheEntry<T>>, appId: number): T | null {
+    const cached = cache.get(appId)
+    if (!cached) return null
+
+    if (cached.expiresAt < Date.now()) {
+      cache.delete(appId)
+      return null
+    }
+
+    return cached.value
+  }
+
+  private setCachedValue<T>(cache: Map<number, CacheEntry<T>>, appId: number, value: T): void {
+    cache.set(appId, {
+      value,
+      expiresAt: Date.now() + SteamService.CACHE_TTL_MS,
+    })
+  }
+
   /**
    * 通过 CORS 代理请求 URL，失败时自动重试其他代理
    * @param url 要请求的目标 URL
@@ -230,25 +260,47 @@ class SteamService {
    */
   async getGameReleaseDate(params: GetGameReleaseDateRequest): Promise<GameReleaseInfo> {
     const { appId } = params
-    const details = await this.getGameDetails({ appId })
-
-    if (!details) {
-      return { releaseDate: null, comingSoon: null, isEarlyAccess: null, genres: null }
+    const cached = this.getCachedValue(this.releaseCache, appId)
+    if (cached) {
+      return cached
     }
 
-    const isEarlyAccess = details.genres?.some((genre) => genre.id === '70') || false
-
-    console.log(
-      `[SteamService] Game ${appId} - isEarlyAccess: ${isEarlyAccess}, genres:`,
-      details.genres?.map((g) => `${g.id}:${g.description}`).join(', ')
-    )
-
-    return {
-      releaseDate: details.release_date?.date || null,
-      comingSoon: details.release_date?.coming_soon ?? null,
-      isEarlyAccess,
-      genres: details.genres || null,
+    const inflight = this.releaseInflight.get(appId)
+    if (inflight) {
+      return inflight
     }
+
+    const request = (async (): Promise<GameReleaseInfo> => {
+      const details = await this.getGameDetails({ appId })
+
+      if (!details) {
+        return { releaseDate: null, comingSoon: null, isEarlyAccess: null, genres: null }
+      }
+
+      const isEarlyAccess = details.genres?.some((genre) => genre.id === '70') || false
+
+      console.log(
+        `[SteamService] Game ${appId} - isEarlyAccess: ${isEarlyAccess}, genres:`,
+        details.genres?.map((g) => `${g.id}:${g.description}`).join(', ')
+      )
+
+      return {
+        releaseDate: details.release_date?.date || null,
+        comingSoon: details.release_date?.coming_soon ?? null,
+        isEarlyAccess,
+        genres: details.genres || null,
+      }
+    })()
+      .then((result) => {
+        this.setCachedValue(this.releaseCache, appId, result)
+        return result
+      })
+      .finally(() => {
+        this.releaseInflight.delete(appId)
+      })
+
+    this.releaseInflight.set(appId, request)
+    return request
   }
 
   /**
@@ -258,19 +310,40 @@ class SteamService {
    */
   async getGameReviews(params: GetGameReviewsRequest): Promise<GameReviewsInfo> {
     const { appId } = params
-
-    // 并行获取全球评论和中文评论
-    const [globalReviews, chineseReviews] = await Promise.all([
-      this.fetchReviewsByLanguage(appId, 'all'),
-      this.fetchReviewsByLanguage(appId, 'schinese'),
-    ])
-
-    return {
-      positivePercentage: globalReviews.positivePercentage,
-      totalReviews: globalReviews.totalReviews,
-      chinesePositivePercentage: chineseReviews.positivePercentage,
-      chineseTotalReviews: chineseReviews.totalReviews,
+    const cached = this.getCachedValue(this.reviewsCache, appId)
+    if (cached) {
+      return cached
     }
+
+    const inflight = this.reviewsInflight.get(appId)
+    if (inflight) {
+      return inflight
+    }
+
+    const request = (async (): Promise<GameReviewsInfo> => {
+      // 并行获取全球评论和中文评论
+      const [globalReviews, chineseReviews] = await Promise.all([
+        this.fetchReviewsByLanguage(appId, 'all'),
+        this.fetchReviewsByLanguage(appId, 'schinese'),
+      ])
+
+      return {
+        positivePercentage: globalReviews.positivePercentage,
+        totalReviews: globalReviews.totalReviews,
+        chinesePositivePercentage: chineseReviews.positivePercentage,
+        chineseTotalReviews: chineseReviews.totalReviews,
+      }
+    })()
+      .then((result) => {
+        this.setCachedValue(this.reviewsCache, appId, result)
+        return result
+      })
+      .finally(() => {
+        this.reviewsInflight.delete(appId)
+      })
+
+    this.reviewsInflight.set(appId, request)
+    return request
   }
 
   /**

@@ -21,7 +21,6 @@ import { useToast } from '../hooks/useToast'
 import { useHighlight } from '../hooks/useHighlight'
 import { useGamesGrouping } from '../hooks/useGamesGrouping'
 import { useGameSearch } from '../hooks/useGameSearch'
-import { useGameRefresh } from '../hooks/useGameRefresh'
 
 // 懒加载重组件（命名导出转换为默认导出）
 const MiniGames = lazy(() =>
@@ -66,9 +65,6 @@ function App() {
 
   // IntersectionObserver ref
   const observerTarget = useRef<HTMLDivElement>(null)
-
-  // 定时刷新游戏信息
-  useGameRefresh(games, setGames)
 
   // 加载指定状态的游戏
   const loadGamesByStatus = async (status: GameStatus, page: number = 1) => {
@@ -135,10 +131,8 @@ function App() {
   // 以下 useEffect 已被提取到自定义 hooks 中：
   // - highlightId 自动清除 → useHighlight
   // - toast 自动清除 → useToast
-  // - 定时刷新游戏信息 → useGameRefresh
 
   // 以下代码已被提取到自定义 hooks 中：
-  // - 定时刷新游戏信息 → useGameRefresh
   // - 游戏分组和排序 → useGamesGrouping
   // - 搜索逻辑 → useGameSearch
 
