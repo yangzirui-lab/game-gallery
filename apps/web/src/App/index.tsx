@@ -129,6 +129,7 @@ function App() {
   // 初始化：加载所有状态的第一页
   useEffect(() => {
     reloadLibraryFirstPages(true)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   // 以下 useEffect 已被提取到自定义 hooks 中：
@@ -533,13 +534,14 @@ function App() {
       { threshold: 0.1 }
     )
 
-    if (observerTarget.current) {
-      observer.observe(observerTarget.current)
+    const target = observerTarget.current
+    if (target) {
+      observer.observe(target)
     }
 
     return () => {
-      if (observerTarget.current) {
-        observer.unobserve(observerTarget.current)
+      if (target) {
+        observer.unobserve(target)
       }
     }
   }, [activeTab, isLoadingMore, loadMoreGames])

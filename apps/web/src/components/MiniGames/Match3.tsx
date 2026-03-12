@@ -233,12 +233,14 @@ export const Match3: React.FC<{ onClose: () => void }> = ({ onClose }) => {
   // 检查胜利
   useEffect(() => {
     if (gameStatus === 'playing' && matchedCount === GRID_ROWS * GRID_COLS) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional: derive won status from matchedCount
       setGameStatus('won')
     }
   }, [matchedCount, gameStatus])
 
   // 初始化
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional: initialize game state on mount
     initGame()
   }, [initGame])
 

@@ -117,6 +117,7 @@ export const Sokoban: React.FC<{ onClose: () => void }> = ({ onClose }) => {
   }, [])
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional: initialize level state when level changes
     initLevel(currentLevel)
   }, [currentLevel, initLevel])
 

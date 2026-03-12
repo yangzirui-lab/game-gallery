@@ -149,6 +149,7 @@ export const Breakout: React.FC<{ onClose: () => void }> = ({ onClose }) => {
 
   // 初始化关卡
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional: initialize bricks state when level changes
     initBricks()
     resetBallAndPaddle()
   }, [currentLevel, initBricks, resetBallAndPaddle])

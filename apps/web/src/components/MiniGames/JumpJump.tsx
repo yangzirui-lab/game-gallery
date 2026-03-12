@@ -73,6 +73,48 @@ export const JumpJump: React.FC<{ onClose: () => void }> = ({ onClose }) => {
     return platforms
   }, [])
 
+  // 添加新平台
+  const addNewPlatform = useCallback(() => {
+    if (!engineRef.current) return
+
+    const lastPlatform = platformsRef.current[platformsRef.current.length - 1]
+    const distance = 100 + Math.random() * 100
+    const angle = (Math.random() * 60 - 30) * (Math.PI / 180)
+
+    const newPlatform: Platform = {
+      x: lastPlatform.x + Math.cos(angle) * distance,
+      y: lastPlatform.y - 80 - Math.random() * 40,
+      width: 60 + Math.random() * 40,
+    }
+
+    // 创建物理刚体（传感器模式）
+    const body = Matter.Bodies.rectangle(
+      newPlatform.x + newPlatform.width / 2,
+      newPlatform.y + PLATFORM_HEIGHT / 2,
+      newPlatform.width,
+      PLATFORM_HEIGHT,
+      {
+        isStatic: true,
+        isSensor: true, // 传感器模式
+        label: 'platform',
+      }
+    )
+    newPlatform.body = body
+    Matter.World.add(engineRef.current.world, body)
+
+    platformsRef.current.push(newPlatform)
+
+    // 移除旧平台
+    if (platformsRef.current.length > 10) {
+      const oldPlatform = platformsRef.current.shift()
+      if (oldPlatform?.body) {
+        Matter.World.remove(engineRef.current.world, oldPlatform.body)
+      }
+      currentPlatformRef.current--
+      playerRef.current.lastPlatformIndex--
+    }
+  }, [])
+
   // 初始化物理引擎
   const initPhysics = useCallback(() => {
     // 创建物理引擎
@@ -190,49 +232,7 @@ export const JumpJump: React.FC<{ onClose: () => void }> = ({ onClose }) => {
     })
 
     currentPlatformRef.current = 0
-  }, [initPlatforms]) // 移除 combo 依赖，避免重复注册事件
-
-  // 添加新平台
-  const addNewPlatform = useCallback(() => {
-    if (!engineRef.current) return
-
-    const lastPlatform = platformsRef.current[platformsRef.current.length - 1]
-    const distance = 100 + Math.random() * 100
-    const angle = (Math.random() * 60 - 30) * (Math.PI / 180)
-
-    const newPlatform: Platform = {
-      x: lastPlatform.x + Math.cos(angle) * distance,
-      y: lastPlatform.y - 80 - Math.random() * 40,
-      width: 60 + Math.random() * 40,
-    }
-
-    // 创建物理刚体（传感器模式）
-    const body = Matter.Bodies.rectangle(
-      newPlatform.x + newPlatform.width / 2,
-      newPlatform.y + PLATFORM_HEIGHT / 2,
-      newPlatform.width,
-      PLATFORM_HEIGHT,
-      {
-        isStatic: true,
-        isSensor: true, // 传感器模式
-        label: 'platform',
-      }
-    )
-    newPlatform.body = body
-    Matter.World.add(engineRef.current.world, body)
-
-    platformsRef.current.push(newPlatform)
-
-    // 移除旧平台
-    if (platformsRef.current.length > 10) {
-      const oldPlatform = platformsRef.current.shift()
-      if (oldPlatform?.body) {
-        Matter.World.remove(engineRef.current.world, oldPlatform.body)
-      }
-      currentPlatformRef.current--
-      playerRef.current.lastPlatformIndex--
-    }
-  }, [])
+  }, [initPlatforms, addNewPlatform]) // 移除 combo 依赖，避免重复注册事件
 
   // 初始化游戏
   const initGame = useCallback(() => {
@@ -518,6 +518,7 @@ export const JumpJump: React.FC<{ onClose: () => void }> = ({ onClose }) => {
 
   // 初始化
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     initGame()
 
     return () => {

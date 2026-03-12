@@ -43,6 +43,7 @@ function useAuth(): UseAuthResult {
    * 初始化认证状态
    */
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional: initialize auth state on mount
     refreshUser()
     setIsLoading(false)
   }, [refreshUser])

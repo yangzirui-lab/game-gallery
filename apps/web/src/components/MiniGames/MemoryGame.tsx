@@ -36,17 +36,20 @@ export const MemoryGame: React.FC<{ onClose: () => void }> = ({ onClose }) => {
   }, [])
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional: initialize game state on mount
     initializeGame()
   }, [initializeGame])
 
   useEffect(() => {
     if (matchedPairs === EMOJIS.length) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional: derive won state from matchedPairs
       setGameWon(true)
     }
   }, [matchedPairs])
 
   useEffect(() => {
     if (flippedCards.length === 2) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional: disable flipping while checking cards
       setCanFlip(false)
       const [first, second] = flippedCards
       const firstCard = cards[first]
