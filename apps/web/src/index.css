@@ -1,20 +1,39 @@
 :root {
-  --bg-color: #0f172a;
-  --panel-bg: rgba(30, 41, 59, 0.7);
-  --card-bg: rgba(51, 65, 85, 0.4);
-  --card-border: rgba(255, 255, 255, 0.1);
-  --text-primary: #f8fafc;
+  /* === Retro-Futurism / Creative Color Palette === */
+  --bg-color: #0f0f23;
+  --bg-surface: #161633;
+  --panel-bg: rgba(22, 22, 51, 0.75);
+  --card-bg: rgba(39, 39, 59, 0.5);
+  --card-border: rgba(124, 58, 237, 0.2);
+  --text-primary: #e2e8f0;
   --text-secondary: #94a3b8;
-  --accent-color: #3b82f6;
-  --accent-glow: rgba(59, 130, 246, 0.5);
+  --accent-color: #7c3aed;
+  --accent-light: #a78bfa;
+  --accent-glow: rgba(124, 58, 237, 0.5);
+  --accent-rose: #f43f5e;
+  --accent-rose-glow: rgba(244, 63, 94, 0.4);
 
+  /* Status colors with neon feel */
   --status-playing: #34d399;
+  --status-playing-glow: rgba(52, 211, 153, 0.4);
   --status-queueing: #fbbf24;
+  --status-queueing-glow: rgba(251, 191, 36, 0.4);
   --status-completion: #38bdf8;
+  --status-completion-glow: rgba(56, 189, 248, 0.4);
   --status-dropped: #ef4444;
 
+  /* Neon glow utilities */
+  --neon-purple: 0 0 10px rgba(124, 58, 237, 0.3), 0 0 30px rgba(124, 58, 237, 0.15);
+  --neon-rose: 0 0 10px rgba(244, 63, 94, 0.3), 0 0 30px rgba(244, 63, 94, 0.15);
+  --neon-purple-strong: 0 0 15px rgba(124, 58, 237, 0.5), 0 0 40px rgba(124, 58, 237, 0.25);
+
+  /* Border */
+  --border-color: rgba(124, 58, 237, 0.15);
+  --border-glow: rgba(124, 58, 237, 0.3);
+
+  /* Typography */
   font-family:
-    'Inter',
+    'Nunito',
     system-ui,
     -apple-system,
     sans-serif;
@@ -29,7 +48,6 @@
   box-sizing: border-box;
   margin: 0;
   padding: 0;
-  /* 移动端触摸优化 */
   -webkit-tap-highlight-color: transparent;
 }
 
@@ -38,18 +56,43 @@ body {
   display: flex;
   flex-direction: column;
   overflow-x: hidden;
-  /* 移动端滚动优化 */
   -webkit-overflow-scrolling: touch;
+  position: relative;
+}
+
+/* Subtle scanline overlay for retro-futurism feel */
+body::after {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+  z-index: 9998;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0, 0, 0, 0.03) 2px,
+    rgba(0, 0, 0, 0.03) 4px
+  );
+  opacity: 0.4;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body::after {
+    display: none;
+  }
 }
 
 #root {
   width: 100%;
-  max-width: 900px;
+  max-width: 1920px;
   margin: 0 auto;
-  padding: 2rem;
+  padding: 1.5rem 2rem;
 }
 
-/* 移动端适配 */
 @media (max-width: 768px) {
   #root {
     padding: 1rem;
@@ -67,7 +110,7 @@ body {
   animation: spin 1s linear infinite;
 }
 
-/* 移动端按钮触摸优化 */
+/* Mobile touch optimization */
 @media (max-width: 768px) {
   button,
   a,
@@ -77,12 +120,10 @@ body {
     min-width: 44px;
   }
 
-  /* 改善滚动性能 */
   * {
     -webkit-overflow-scrolling: touch;
   }
 
-  /* 防止双击缩放 */
   input,
   textarea,
   select {
@@ -99,23 +140,23 @@ body {
   }
 }
 
-/* 优化原生 select 下拉框样式 */
+/* Native select styling */
 select {
   color-scheme: dark;
 }
 
 select option {
-  background-color: #1e293b;
+  background-color: #161633;
   color: #e2e8f0;
   padding: 8px 12px;
 }
 
 select option:hover {
-  background-color: #334155;
+  background-color: #27273b;
 }
 
 select option:checked,
 select option:focus {
-  background-color: #475569;
+  background-color: #7c3aed;
   color: #fff;
 }

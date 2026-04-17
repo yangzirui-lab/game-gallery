@@ -4,7 +4,17 @@ import { GameItem } from '../components/GameItem'
 import { SearchBar, type SearchResult } from '../components/SearchBar'
 import type { Game } from '../types'
 import { AnimatePresence, motion } from 'framer-motion'
-import { SettingsIcon, Loader2, Play, Bookmark, CheckCircle, Library, Sparkles } from 'lucide-react'
+import {
+  SettingsIcon,
+  Loader2,
+  Play,
+  Bookmark,
+  CheckCircle,
+  Library,
+  Sparkles,
+  PackageOpen,
+  Plus,
+} from 'lucide-react'
 import { gameService } from '../services/game'
 import { userGameService } from '../services/userGame'
 import { steamService } from '../services/steam'
@@ -21,6 +31,7 @@ import { useToast } from '../hooks/useToast'
 import { useHighlight } from '../hooks/useHighlight'
 import { useGamesGrouping } from '../hooks/useGamesGrouping'
 import { useGameSearch } from '../hooks/useGameSearch'
+import { useMasonry } from '../hooks/useMasonry'
 
 // 懒加载重组件（命名导出转换为默认导出）
 const MiniGames = lazy(() =>
@@ -62,6 +73,9 @@ function App() {
   const { highlightId, setHighlightId } = useHighlight()
   const groupedGames = useGamesGrouping(games)
   const searchResults = useGameSearch(games, searchTerm)
+  const currentGames = groupedGames[activeTab]
+  const { columns, distribute } = useMasonry()
+  const masonryColumns = distribute(currentGames)
 
   // IntersectionObserver ref
   const observerTarget = useRef<HTMLDivElement>(null)
@@ -556,27 +570,75 @@ function App() {
         </div>
       </header>
 
-      {/* Main Tab Navigation */}
-      <div className={styles.mainTabNav}>
+      {/* Main Tabs: Games / Playground as peers */}
+      <div className={styles.mainTabs}>
         <button
           onClick={() => setMainTab('steamgames')}
-          className={classNames(styles.mainTabBtn, {
+          className={classNames(styles.mainTab, {
             [styles.mainTabActive]: mainTab === 'steamgames',
           })}
         >
-          <Library size={20} />
-          Steam Games
+          <Library size={18} />
+          Games
         </button>
         <button
           onClick={() => setMainTab('playground')}
-          className={classNames(styles.mainTabBtn, {
+          className={classNames(styles.mainTab, {
             [styles.mainTabActive]: mainTab === 'playground',
           })}
         >
-          <Sparkles size={20} />
+          <Sparkles size={18} />
           Playground
         </button>
       </div>
+
+      {/* Status filters (only when Games tab active) */}
+      {mainTab === 'steamgames' && (
+        <div className={styles.filterBar}>
+          <div className={styles.statusFilters}>
+            <button
+              data-status="playing"
+              onClick={() => setActiveTab('playing')}
+              className={classNames(styles.filterBtn, {
+                [styles.active]: activeTab === 'playing',
+                [styles.activePlaying]: activeTab === 'playing',
+              })}
+            >
+              <Play size={14} />
+              <span>Playing</span>
+              <span className={styles.filterCount}>{statusCounts.playing}</span>
+            </button>
+            <button
+              data-status="queueing"
+              onClick={() => setActiveTab('queueing')}
+              className={classNames(styles.filterBtn, {
+                [styles.active]: activeTab === 'queueing',
+                [styles.activeQueueing]: activeTab === 'queueing',
+              })}
+            >
+              <Bookmark size={14} />
+              <span>Queueing</span>
+              <span className={styles.filterCount}>{statusCounts.queueing}</span>
+            </button>
+            <button
+              data-status="completion"
+              onClick={() => setActiveTab('completion')}
+              className={classNames(styles.filterBtn, {
+                [styles.active]: activeTab === 'completion',
+                [styles.activeCompletion]: activeTab === 'completion',
+              })}
+            >
+              <CheckCircle size={14} />
+              <span>Done</span>
+              <span className={styles.filterCount}>{statusCounts.completion}</span>
+            </button>
+          </div>
+          <button onClick={() => setShowSteamSearch(true)} className={styles.btnSteam}>
+            <Plus size={16} />
+            添加
+          </button>
+        </div>
+      )}
 
       <main>
         {mainTab === 'playground' ? (
@@ -597,95 +659,61 @@ function App() {
           </div>
         ) : (
           <div>
-            {/* Tab Navigation with Add Button */}
-            <div className={styles.tabNavRow}>
-              <div className={styles.tabNav}>
-                <button
-                  data-status="playing"
-                  onClick={() => setActiveTab('playing')}
-                  className={classNames(styles.tabBtn, {
-                    [styles.active]: activeTab === 'playing',
-                    [styles.activePlaying]: activeTab === 'playing',
-                  })}
-                >
-                  <Play size={16} />
-                  Playing ({statusCounts.playing})
-                </button>
-                <button
-                  data-status="queueing"
-                  onClick={() => setActiveTab('queueing')}
-                  className={classNames(styles.tabBtn, {
-                    [styles.active]: activeTab === 'queueing',
-                    [styles.activeQueueing]: activeTab === 'queueing',
-                  })}
-                >
-                  <Bookmark size={16} />
-                  Queueing ({statusCounts.queueing})
-                </button>
-                <button
-                  data-status="completion"
-                  onClick={() => setActiveTab('completion')}
-                  className={classNames(styles.tabBtn, {
-                    [styles.active]: activeTab === 'completion',
-                    [styles.activeCompletion]: activeTab === 'completion',
-                  })}
-                >
-                  <CheckCircle size={16} />
-                  Completion ({statusCounts.completion})
-                </button>
-              </div>
-              <button onClick={() => setShowSteamSearch(true)} className={styles.btnSteam}>
-                从 Steam 添加
-              </button>
-            </div>
-
-            {/* Game List */}
-            <div className={styles.gameList}>
-              <AnimatePresence mode="wait">
-                {groupedGames[activeTab].length > 0 ? (
-                  <>
-                    {groupedGames[activeTab].map((game) => (
-                      <motion.div
-                        key={game.id}
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, scale: 0.95 }}
-                        transition={{ duration: 0.3 }}
-                        className={styles.gameItemWrapper}
-                      >
-                        <GameItem
-                          game={game}
-                          onUpdate={handleUpdateGame}
-                          onDelete={handleDeleteGame}
-                          onPin={handlePinGame}
-                          isHighlighted={highlightId === game.id}
-                          onShowToast={showToast}
-                        />
-                      </motion.div>
-                    ))}
-                    {/* 加载触发器 */}
-                    <div ref={observerTarget} className={styles.loadMoreTrigger} />
-                    {/* 加载状态提示 */}
-                    {isLoadingMore && (
-                      <div className={styles.loadingMore}>
-                        <Loader2 className="animate-spin" size={24} />
-                        <span>加载中...</span>
-                      </div>
-                    )}
-                  </>
-                ) : (
-                  <motion.div
-                    key="empty"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    className={styles.emptyState}
-                  >
-                    该状态下暂无游戏
-                  </motion.div>
+            {/* Game List - Masonry Layout */}
+            {currentGames.length > 0 ? (
+              <>
+                <div className={styles.masonry}>
+                  {masonryColumns.map((col, colIndex) => (
+                    <div key={colIndex} className={styles.masonryColumn}>
+                      {col.map((game, indexInCol) => (
+                        <motion.div
+                          key={game.id}
+                          initial={{ opacity: 0, y: 20 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{
+                            duration: 0.3,
+                            delay: (colIndex + indexInCol * columns) * 0.04,
+                          }}
+                          className={styles.gameItemWrapper}
+                        >
+                          <GameItem
+                            game={game}
+                            onUpdate={handleUpdateGame}
+                            onDelete={handleDeleteGame}
+                            onPin={handlePinGame}
+                            isHighlighted={highlightId === game.id}
+                            onShowToast={showToast}
+                          />
+                        </motion.div>
+                      ))}
+                    </div>
+                  ))}
+                </div>
+                {/* 加载触发器 */}
+                <div ref={observerTarget} className={styles.loadMoreTrigger} />
+                {/* 加载状态提示 */}
+                {isLoadingMore && (
+                  <div className={styles.loadingMore}>
+                    <Loader2 className="animate-spin" size={24} />
+                    <span>加载中...</span>
+                  </div>
                 )}
-              </AnimatePresence>
-            </div>
+              </>
+            ) : (
+              <motion.div
+                key="empty"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className={styles.emptyState}
+              >
+                <PackageOpen size={48} strokeWidth={1.5} />
+                <p>该状态下暂无游戏</p>
+                <button className={styles.emptyStateBtn} onClick={() => setShowSteamSearch(true)}>
+                  <Plus size={16} />从 Steam 添加游戏
+                </button>
+              </motion.div>
+            )}
           </div>
         )}
       </main>

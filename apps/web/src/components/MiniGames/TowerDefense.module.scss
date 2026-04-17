@@ -13,7 +13,7 @@
 }
 
 .gameContainer {
-  background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+  background: linear-gradient(135deg, #161633 0%, #27273b 100%);
   border-radius: 16px;
   padding: 1.5rem;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.8);
@@ -181,8 +181,8 @@
 
 .grid {
   position: relative;
-  background: #0f172a;
-  border: 2px solid #1e293b;
+  background: #0f0f23;
+  border: 2px solid #161633;
   border-radius: 8px;
 }
 
@@ -194,11 +194,11 @@
   transition: all 0.2s;
 
   &.empty {
-    background: #1e293b;
+    background: #161633;
     cursor: pointer;
 
     &:hover {
-      background: #334155;
+      background: #27273b;
     }
   }
 
