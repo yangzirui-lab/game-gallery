@@ -3,8 +3,6 @@
  * No strokes, pure fill. Same API as other sets.
  */
 
-import React from 'react'
-
 interface IconProps {
   size?: number
   className?: string

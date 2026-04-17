@@ -4,8 +4,6 @@
  * Drop-in replacements for Lucide icons (same size/className props).
  */
 
-import React from 'react'
-
 interface IconProps {
   size?: number
   className?: string

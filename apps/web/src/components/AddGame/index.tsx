@@ -37,7 +37,7 @@ export const AddGame: React.FC<AddGameProps> = ({ onAdd }) => {
           onChange={(e) => setSteamUrl(e.target.value)}
         />
         <button type="submit" className={styles.btnAdd}>
-          <Plus size={20} style={{ marginRight: '0.5rem', verticalAlign: 'middle' }} />
+          <Plus size={20} />
           Add Game
         </button>
       </form>

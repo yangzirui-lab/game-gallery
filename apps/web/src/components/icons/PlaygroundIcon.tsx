@@ -1,5 +1,3 @@
-import React from 'react'
-
 interface PlaygroundIconProps {
   size?: number
   className?: string

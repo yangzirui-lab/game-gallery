@@ -3,8 +3,6 @@
  * Same API as PixelIcons (size + className). Drop-in replacement.
  */
 
-import React from 'react'
-
 interface IconProps {
   size?: number
   className?: string
