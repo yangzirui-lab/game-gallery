@@ -8,34 +8,70 @@ on:
       - 'games.json'
       - 'games/**'
   workflow_dispatch:
+    inputs:
+      force_all:
+        description: '强制 build/deploy 全部（绕过 paths-filter）'
+        required: false
+        default: 'false'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      web: ${{ steps.filter.outputs.web }}
+      fund: ${{ steps.filter.outputs.fund }}
+      godot: ${{ steps.filter.outputs.godot }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - id: filter
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            web:
+              - 'apps/web/**'
+              - '!apps/web/public/godot-tower-defense/**'
+              - 'package.json'
+              - 'package-lock.json'
+            fund:
+              - 'apps/fund/**'
+              - 'package.json'
+              - 'package-lock.json'
+            godot:
+              - 'apps/web/public/godot-tower-defense/**'
+
   build-and-deploy:
+    needs: changes
     runs-on: ubuntu-latest
     permissions:
       contents: write
+    env:
+      FORCE_ALL: ${{ github.event.inputs.force_all == 'true' }}
+      WEB_CHANGED: ${{ needs.changes.outputs.web }}
+      FUND_CHANGED: ${{ needs.changes.outputs.fund }}
+      GODOT_CHANGED: ${{ needs.changes.outputs.godot }}
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: '20'
           cache: 'npm'
 
       - name: Install dependencies
+        if: env.WEB_CHANGED == 'true' || env.FUND_CHANGED == 'true' || env.FORCE_ALL == 'true'
         run: npm ci
         env:
           CI: true
 
       # ===== 主前端 apps/web =====
       - name: Build web frontend
+        if: env.WEB_CHANGED == 'true' || env.FORCE_ALL == 'true'
         working-directory: ./apps/web
         env:
           VITE_BASE_PATH: /
@@ -43,6 +79,7 @@ jobs:
         run: npm run build
 
       - name: Deploy web to dist branch
+        if: env.WEB_CHANGED == 'true' || env.FORCE_ALL == 'true'
         uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
@@ -53,14 +90,16 @@ jobs:
           user_email: 'github-actions[bot]@users.noreply.github.com'
           commit_message: 'Deploy web build ${{ github.sha }}'
 
-      # ===== fund-tracker 子前端 apps/fund =====
+      # ===== fund 子前端 apps/fund =====
       - name: Build fund frontend
+        if: env.FUND_CHANGED == 'true' || env.FORCE_ALL == 'true'
         working-directory: ./apps/fund
         env:
           VITE_BASE_PATH: /
         run: npm run build
 
       - name: Deploy fund to fund-dist branch
+        if: env.FUND_CHANGED == 'true' || env.FORCE_ALL == 'true'
         uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
@@ -71,20 +110,46 @@ jobs:
           user_email: 'github-actions[bot]@users.noreply.github.com'
           commit_message: 'Deploy fund build ${{ github.sha }}'
 
-      # ===== 服务器侧部署：仅 frontend 静态文件，后端逻辑由 degenerates-backend 容器承担 =====
+      # ===== godot 资源（67MB，独立流，仅在文件变化时触发）=====
+      - name: Pack godot assets
+        if: env.GODOT_CHANGED == 'true' || env.FORCE_ALL == 'true'
+        run: |
+          mkdir -p godot-staging
+          cp -R apps/web/public/godot-tower-defense godot-staging/
+
+      - name: Deploy godot to godot-assets branch
+        if: env.GODOT_CHANGED == 'true' || env.FORCE_ALL == 'true'
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./godot-staging
+          publish_branch: godot-assets
+          force_orphan: true
+          user_name: 'github-actions[bot]'
+          user_email: 'github-actions[bot]@users.noreply.github.com'
+          commit_message: 'Deploy godot assets ${{ github.sha }}'
+
+      # ===== 服务器侧同步 =====
       - name: Deploy to Linux Server
+        if: env.WEB_CHANGED == 'true' || env.FUND_CHANGED == 'true' || env.GODOT_CHANGED == 'true' || env.FORCE_ALL == 'true'
         uses: appleboy/ssh-action@master
+        env:
+          WEB_CHANGED: ${{ needs.changes.outputs.web }}
+          FUND_CHANGED: ${{ needs.changes.outputs.fund }}
+          GODOT_CHANGED: ${{ needs.changes.outputs.godot }}
+          FORCE_ALL: ${{ github.event.inputs.force_all == 'true' }}
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: ${{ secrets.SSH_PORT || 22 }}
+          envs: WEB_CHANGED,FUND_CHANGED,GODOT_CHANGED,FORCE_ALL
           timeout: 10m
           command_timeout: 10m
           script: |
             set -e
 
-            # 大陆访问 GitHub 不稳。用 archive tarball + 镜像 fallback 下载。
+            # codeload + ghfast / ghproxy fallback 下载分支 tarball
             download_branch_to() {
               local repo="$1" branch="$2" target="$3"
               local tmp="/tmp/${branch}-$$.tar.gz"
@@ -112,15 +177,31 @@ jobs:
 
             REPO=${{ github.repository }}
 
-            # fund 静态先（小且关键）
-            download_branch_to "$REPO" fund-dist /opt/fund-tracker/web/dist
+            if [ "$FUND_CHANGED" = "true" ] || [ "$FORCE_ALL" = "true" ]; then
+              download_branch_to "$REPO" fund-dist /opt/fund-tracker/web/dist
+            else
+              echo "skip fund (no changes)"
+            fi
 
-            # web 静态后（71MB，失败不影响 fund）
-            download_branch_to "$REPO" dist /opt/game-gallery/web/dist || \
-              echo "⚠️ web 同步失败，但 fund 已成功部署"
+            if [ "$WEB_CHANGED" = "true" ] || [ "$FORCE_ALL" = "true" ]; then
+              # web 现在不含 godot（已 4MB）
+              download_branch_to "$REPO" dist /opt/game-gallery/web/dist
+            else
+              echo "skip web (no changes)"
+            fi
+
+            # 服务器若没拿过 godot 资源，即使 godot 没变化也强制拉一次（首次部署兜底）
+            if [ "$GODOT_CHANGED" = "true" ] || [ "$FORCE_ALL" = "true" ] \
+               || [ ! -d /opt/godot-assets/godot-tower-defense ]; then
+              download_branch_to "$REPO" godot-assets /opt/godot-assets \
+                || echo "⚠️ godot-assets 分支不可用（首次部署需手动 dispatch 一次 force_all=true 来 publish）"
+            else
+              echo "skip godot (no changes)"
+            fi
 
       - name: Done
         run: |
-          echo "Deployment completed."
-          echo "  web:  https://degenerates.site"
-          echo "  fund: https://fund.degenerates.site"
+          echo "Deployment summary:"
+          echo "  web:   ${{ env.WEB_CHANGED == 'true' && '✓ deployed' || 'skipped' }}"
+          echo "  fund:  ${{ env.FUND_CHANGED == 'true' && '✓ deployed' || 'skipped' }}"
+          echo "  godot: ${{ env.GODOT_CHANGED == 'true' && '✓ deployed' || 'skipped' }}"

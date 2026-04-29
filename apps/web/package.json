@@ -6,7 +6,7 @@
   "homepage": "https://zhaoyang.github.io/game-gallery",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
+    "build": "tsc -b && vite build && rm -rf dist/godot-tower-defense",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "type-check": "tsc --noEmit",
