@@ -9,30 +9,44 @@
   display: flex;
   justify-content: space-between;
   align-items: baseline;
-  padding: 16px 24px;
-  border-bottom: 1px solid var(--line);
+  padding: 22px 28px 18px;
+  border-bottom: 1px solid var(--line-soft);
+  background: rgba(16, 23, 32, 0.72);
+  backdrop-filter: blur(14px);
 
   h1 {
-    font-size: 16px;
-    font-weight: 600;
+    font-size: 20px;
+    font-weight: 700;
     margin: 0;
-    font-family: var(--mono);
-    letter-spacing: -0.3px;
+    letter-spacing: 0;
   }
 
   .meta {
     display: flex;
-    gap: 16px;
+    gap: 10px;
     align-items: center;
     color: var(--muted);
     font-size: 12px;
     font-family: var(--mono);
+
+    a,
+    span {
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 5px 10px;
+      background: rgba(255, 255, 255, 0.03);
+    }
+
+    a:hover {
+      border-color: rgba(110, 198, 255, 0.6);
+      text-decoration: none;
+    }
   }
 }
 
 .main {
-  padding: 16px 24px 32px;
-  max-width: 1100px;
+  padding: 24px 28px 40px;
+  max-width: 1180px;
   width: 100%;
   margin: 0 auto;
   flex: 1;
@@ -41,7 +55,9 @@
 .card {
   background: var(--bg-card);
   border: 1px solid var(--line);
-  padding: 12px 16px;
+  border-radius: 8px;
+  box-shadow: var(--shadow-card);
+  padding: 18px;
   margin-bottom: 16px;
 }
 
@@ -49,51 +65,60 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 8px;
+  margin-bottom: 14px;
+  gap: 12px;
 
   h2 {
     margin: 0;
-    font-size: 13px;
-    font-weight: 600;
+    font-size: 12px;
+    font-weight: 700;
     text-transform: uppercase;
-    letter-spacing: 0.5px;
-    color: var(--muted);
+    letter-spacing: 0.08em;
+    color: var(--muted-strong);
   }
 }
 
 .dataTable {
   width: 100%;
   min-width: 640px;
-  border-collapse: collapse;
+  border-collapse: separate;
+  border-spacing: 0;
   font-family: var(--mono);
   font-size: 13px;
 
   th,
   td {
-    padding: 6px 8px;
+    padding: 10px 12px;
     text-align: left;
-    border-bottom: 1px solid var(--line);
+    border-bottom: 1px solid var(--line-soft);
   }
+
   th {
     font-weight: 500;
     color: var(--muted);
     text-transform: uppercase;
     font-size: 11px;
-    letter-spacing: 0.5px;
+    letter-spacing: 0.06em;
+    background: rgba(255, 255, 255, 0.025);
   }
+
   td.num,
   th.num {
     text-align: right;
   }
+
   tbody tr {
     cursor: pointer;
   }
+
   tbody tr:hover {
     background: var(--bg-hover);
   }
+
   tbody tr.noHover {
     cursor: default;
   }
+
   tbody tr.noHover:hover {
     background: transparent;
   }
@@ -106,16 +131,17 @@
 }
 
 .ghostBtn {
-  background: transparent;
-  color: var(--muted);
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--muted-strong);
   border: 1px solid var(--line);
-  padding: 4px 12px;
+  padding: 6px 13px;
   font-size: 12px;
   min-height: 32px;
 
   &:hover {
     color: var(--text);
-    border-color: var(--text);
+    border-color: rgba(110, 198, 255, 0.55);
+    background: rgba(110, 198, 255, 0.09);
   }
 
   &:disabled {
@@ -132,17 +158,19 @@
   font-family: var(--mono);
   font-size: 12px;
   margin-bottom: 16px;
-  padding: 10px 12px;
+  border-radius: 8px;
+  padding: 12px 14px;
 }
 
 .errorBox {
-  border-color: rgba(248, 81, 73, 0.5);
+  background: rgba(255, 107, 99, 0.08);
+  border-color: rgba(255, 107, 99, 0.36);
   color: var(--red);
 }
 
 .footer {
-  padding: 16px 24px;
-  border-top: 1px solid var(--line);
+  padding: 18px 24px;
+  border-top: 1px solid var(--line-soft);
   text-align: center;
   color: var(--muted);
   font-size: 12px;
@@ -154,7 +182,8 @@
   margin-right: 8px;
 
   &:hover {
-    color: var(--text);
+    color: var(--accent-strong);
+    text-decoration: none;
   }
 }
 

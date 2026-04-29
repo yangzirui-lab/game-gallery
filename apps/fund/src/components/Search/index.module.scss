@@ -4,17 +4,18 @@
 
 .input {
   width: 100%;
-  padding: 9px 12px;
-  background: var(--bg);
+  padding: 12px 14px;
+  background: var(--bg-elevated);
   color: var(--text);
   border: 1px solid var(--line);
   font-family: var(--mono);
   font-size: 14px;
-  border-radius: 0;
+  border-radius: 8px;
   outline: none;
 
   &:focus {
     border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(110, 198, 255, 0.13);
   }
 }
 
@@ -27,10 +28,12 @@
 
 .results {
   list-style: none;
-  margin: 4px 0 0;
-  padding: 0;
-  background: var(--bg-card);
+  margin: 8px 0 0;
+  padding: 6px;
+  background: var(--bg-elevated);
   border: 1px solid var(--line);
+  border-radius: 8px;
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.32);
   max-height: 320px;
   overflow-y: auto;
   position: absolute;
@@ -39,11 +42,11 @@
   z-index: 10;
 
   li {
-    padding: 6px 12px;
+    padding: 9px 10px;
     cursor: pointer;
     font-family: var(--mono);
     font-size: 13px;
-    border-bottom: 1px solid var(--line);
+    border-radius: 6px;
     display: flex;
     justify-content: space-between;
     gap: 16px;
@@ -74,19 +77,20 @@
 }
 
 .type {
-  color: var(--muted);
+  color: var(--amber);
   font-size: 11px;
 }
 
 .quick {
-  margin-top: 12px;
-  padding: 12px;
-  background: var(--bg);
+  margin-top: 14px;
+  padding: 14px;
+  background: var(--bg-elevated);
   border: 1px solid var(--line);
+  border-radius: 8px;
 
   h3 {
     margin: 0 0 8px;
-    font-size: 13px;
+    font-size: 15px;
     font-family: var(--mono);
     display: flex;
     justify-content: space-between;
@@ -104,7 +108,8 @@
   background: var(--accent);
   color: #0d1117;
   border: none;
-  padding: 6px 16px;
+  border-radius: 8px;
+  padding: 7px 16px;
   font-family: var(--mono);
   font-size: 12px;
   min-height: 32px;
@@ -112,7 +117,7 @@
   align-items: center;
 
   &:hover {
-    background: #79b8ff;
+    background: var(--accent-strong);
     text-decoration: none;
   }
 }
