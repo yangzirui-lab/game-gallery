@@ -164,15 +164,17 @@ export default function Search({ watchlist, onWatchlistChange }: Props) {
                         <span className={styles.errorText}>添加失败：{addError[r.code]}</span>
                       )}
                     </a>
-                    <span className={styles.type}>{r.ftype || r.type || ''}</span>
-                    <button
-                      type="button"
-                      className={styles.addBtn}
-                      onClick={() => void handleAdd(r)}
-                      disabled={tracked || addingCode === r.code}
-                    >
-                      {tracked ? '已跟踪' : addingCode === r.code ? '添加中…' : '加入'}
-                    </button>
+                    <span className={styles.resultActions}>
+                      <span className={styles.type}>{r.ftype || r.type || ''}</span>
+                      <button
+                        type="button"
+                        className={styles.addBtn}
+                        onClick={() => void handleAdd(r)}
+                        disabled={tracked || addingCode === r.code}
+                      >
+                        {tracked ? '已跟踪' : addingCode === r.code ? '添加中…' : '加入'}
+                      </button>
+                    </span>
                   </li>
                 )
               })

@@ -33,6 +33,7 @@
   max-height: min(380px, calc(100vh - 220px));
   overflow-y: auto;
   overscroll-behavior: contain;
+  scrollbar-gutter: stable;
 
   &::-webkit-scrollbar {
     width: 8px;
@@ -66,8 +67,8 @@
 .resultItem {
   align-items: center;
   display: grid;
-  gap: 16px;
-  grid-template-columns: minmax(0, 1fr) 180px 88px;
+  gap: 14px;
+  grid-template-columns: minmax(0, 1fr) auto;
   padding: 10px 12px;
 
   &:hover {
@@ -118,6 +119,14 @@
   white-space: nowrap;
 }
 
+.resultActions {
+  align-items: center;
+  display: flex;
+  gap: 10px;
+  justify-self: end;
+  min-width: 0;
+}
+
 .type {
   align-self: center;
   background: rgba(244, 201, 93, 0.1);
@@ -125,8 +134,7 @@
   border-radius: 999px;
   color: var(--amber);
   font-size: 11px;
-  justify-self: start;
-  max-width: 180px;
+  max-width: 220px;
   overflow: hidden;
   padding: 2px 7px;
   text-overflow: ellipsis;
@@ -142,7 +150,6 @@
 }
 
 .addBtn {
-  justify-self: stretch;
   background: rgba(110, 198, 255, 0.1);
   border: 1px solid rgba(110, 198, 255, 0.32);
   border-radius: 8px;
@@ -150,6 +157,7 @@
   font-family: var(--mono);
   font-size: 12px;
   min-height: 32px;
+  min-width: 78px;
   padding: 6px 12px;
 
   &:hover {
@@ -189,9 +197,14 @@
     gap: 10px;
   }
 
+  .resultActions {
+    justify-content: space-between;
+    justify-self: stretch;
+    width: 100%;
+  }
+
   .type {
-    justify-self: start;
-    max-width: none;
+    max-width: calc(100% - 98px);
   }
 
   .addBtn {

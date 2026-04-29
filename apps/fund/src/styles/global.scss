@@ -37,6 +37,10 @@ body {
   line-height: 1.5;
 }
 
+html {
+  scrollbar-gutter: stable;
+}
+
 a {
   color: var(--accent);
   text-decoration: none;
