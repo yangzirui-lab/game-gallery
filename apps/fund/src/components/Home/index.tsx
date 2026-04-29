@@ -37,8 +37,8 @@ export default function Home() {
       </header>
 
       <main className={shared.main}>
-        <Watchlist funds={watchlist} onChange={reload} />
         <Search watchlist={watchlist} onWatchlistChange={reload} />
+        <Watchlist funds={watchlist} onChange={reload} />
       </main>
 
       <footer className={shared.footer}>
