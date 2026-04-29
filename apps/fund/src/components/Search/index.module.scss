@@ -29,17 +29,31 @@
 .results {
   list-style: none;
   margin: 8px 0 0;
-  padding: 6px;
+  padding: 8px;
   background: var(--bg-elevated);
   border: 1px solid var(--line);
   border-radius: 8px;
   box-shadow: 0 18px 40px rgba(0, 0, 0, 0.32);
-  max-height: 320px;
+  max-height: min(380px, calc(100vh - 220px));
   overflow-y: auto;
+  overscroll-behavior: contain;
   position: absolute;
   left: 0;
   right: 0;
   z-index: 10;
+
+  &::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: rgba(146, 160, 170, 0.35);
+    border-radius: 999px;
+  }
 
   li {
     font-family: var(--mono);
@@ -58,11 +72,11 @@
 }
 
 .resultItem {
-  align-items: stretch;
+  align-items: center;
   display: grid;
-  gap: 10px;
-  grid-template-columns: minmax(0, 1fr) auto;
-  padding: 8px;
+  gap: 16px;
+  grid-template-columns: minmax(0, 1fr) 180px 88px;
+  padding: 10px 12px;
 
   &:hover {
     background: var(--bg-hover);
@@ -84,13 +98,14 @@
 .resultTitle {
   align-items: center;
   display: flex;
-  gap: 8px;
+  gap: 10px;
   min-width: 0;
 }
 
 .code {
   color: var(--muted);
   flex: 0 0 auto;
+  min-width: 58px;
 }
 
 .errorItem {
@@ -100,19 +115,25 @@
 
 .name {
   flex: 1;
+  font-weight: 650;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .type {
+  align-self: center;
   background: rgba(244, 201, 93, 0.1);
   border: 1px solid rgba(244, 201, 93, 0.2);
   border-radius: 999px;
   color: var(--amber);
-  flex: 0 0 auto;
   font-size: 11px;
+  justify-self: start;
+  max-width: 180px;
+  overflow: hidden;
   padding: 2px 7px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .resultMeta {
@@ -124,16 +145,14 @@
 }
 
 .addBtn {
-  align-self: center;
+  justify-self: stretch;
   background: rgba(110, 198, 255, 0.1);
   border: 1px solid rgba(110, 198, 255, 0.32);
   border-radius: 8px;
   color: var(--accent-strong);
   font-family: var(--mono);
   font-size: 12px;
-  justify-self: end;
   min-height: 32px;
-  min-width: 72px;
   padding: 6px 12px;
 
   &:hover {
@@ -170,10 +189,15 @@
 
   .resultItem {
     grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .type {
+    justify-self: start;
+    max-width: none;
   }
 
   .addBtn {
-    justify-self: stretch;
     min-height: 44px;
   }
 }

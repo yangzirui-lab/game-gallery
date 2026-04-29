@@ -158,7 +158,6 @@ export default function Search({ watchlist, onWatchlistChange }: Props) {
                       <span className={styles.resultTitle}>
                         <span className={styles.code}>{r.code}</span>
                         <span className={styles.name}>{r.name}</span>
-                        <span className={styles.type}>{r.ftype || r.type || ''}</span>
                       </span>
                       <span className={styles.resultMeta}>
                         {preview?.loading ? (
@@ -179,6 +178,7 @@ export default function Search({ watchlist, onWatchlistChange }: Props) {
                         <span className={styles.errorText}>添加失败：{addError[r.code]}</span>
                       )}
                     </a>
+                    <span className={styles.type}>{r.ftype || r.type || ''}</span>
                     <button
                       type="button"
                       className={styles.addBtn}
