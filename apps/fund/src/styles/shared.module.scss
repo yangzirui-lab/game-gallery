@@ -1,0 +1,130 @@
+/* 共享布局 */
+.page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding: 16px 24px;
+  border-bottom: 1px solid var(--line);
+
+  h1 {
+    font-size: 16px;
+    font-weight: 600;
+    margin: 0;
+    font-family: var(--mono);
+    letter-spacing: -0.3px;
+  }
+
+  .meta {
+    display: flex;
+    gap: 16px;
+    align-items: center;
+    color: var(--muted);
+    font-size: 12px;
+    font-family: var(--mono);
+  }
+}
+
+.main {
+  padding: 16px 24px 32px;
+  max-width: 1100px;
+  width: 100%;
+  margin: 0 auto;
+  flex: 1;
+}
+
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--line);
+  padding: 12px 16px;
+  margin-bottom: 16px;
+}
+
+.cardHead {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+
+  h2 {
+    margin: 0;
+    font-size: 13px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--muted);
+  }
+}
+
+.dataTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--mono);
+  font-size: 13px;
+
+  th,
+  td {
+    padding: 6px 8px;
+    text-align: left;
+    border-bottom: 1px solid var(--line);
+  }
+  th {
+    font-weight: 500;
+    color: var(--muted);
+    text-transform: uppercase;
+    font-size: 11px;
+    letter-spacing: 0.5px;
+  }
+  td.num,
+  th.num {
+    text-align: right;
+  }
+  tbody tr {
+    cursor: pointer;
+  }
+  tbody tr:hover {
+    background: var(--bg-hover);
+  }
+  tbody tr.noHover {
+    cursor: default;
+  }
+  tbody tr.noHover:hover {
+    background: transparent;
+  }
+}
+
+.ghostBtn {
+  background: transparent;
+  color: var(--muted);
+  border: 1px solid var(--line);
+  padding: 4px 12px;
+  font-size: 12px;
+
+  &:hover {
+    color: var(--text);
+    border-color: var(--text);
+  }
+}
+
+.footer {
+  padding: 16px 24px;
+  border-top: 1px solid var(--line);
+  text-align: center;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.back {
+  font-family: var(--mono);
+  color: var(--muted);
+  margin-right: 8px;
+
+  &:hover {
+    color: var(--text);
+  }
+}

@@ -9,13 +9,21 @@
   ],
   "scripts": {
     "dev": "npm run dev -w apps/web",
+    "dev:fund": "npm run dev -w apps/fund",
     "build": "npm run build -w apps/web",
+    "build:fund": "npm run build -w apps/fund",
+    "build:all": "npm run build -w apps/web && npm run build -w apps/fund",
     "prepare": "husky || true"
   },
   "lint-staged": {
     "apps/web/**/*.{js,jsx,ts,tsx}": [
       "bash -c 'cd apps/web && npx tsc --noEmit -p tsconfig.app.json'",
       "eslint --config apps/web/eslint.config.js --fix",
+      "prettier --write"
+    ],
+    "apps/fund/**/*.{js,jsx,ts,tsx}": [
+      "bash -c 'cd apps/fund && npx tsc --noEmit -p tsconfig.app.json'",
+      "eslint --config apps/fund/eslint.config.js --fix",
       "prettier --write"
     ],
     "*.{json,css,scss,md}": [

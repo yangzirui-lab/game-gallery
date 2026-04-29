@@ -23,7 +23,6 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # 构建前端并推送到 dist 分支
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
@@ -35,14 +34,15 @@ jobs:
         env:
           CI: true
 
-      - name: Build frontend
+      # ===== 主前端 apps/web =====
+      - name: Build web frontend
         working-directory: ./apps/web
         env:
           VITE_BASE_PATH: /
           VITE_API_URL: https://degenerates.site
         run: npm run build
 
-      - name: Deploy to dist branch
+      - name: Deploy web to dist branch
         uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
@@ -51,24 +51,44 @@ jobs:
           force_orphan: true
           user_name: 'github-actions[bot]'
           user_email: 'github-actions[bot]@users.noreply.github.com'
-          commit_message: 'Deploy frontend build ${{ github.sha }}'
+          commit_message: 'Deploy web build ${{ github.sha }}'
 
-      # 通过SSH推送前端文件到服务器
-      - name: Push Frontend to Server
+      - name: Push web to server
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: ${{ secrets.SSH_PORT || 22 }}
-          source: "./apps/web/dist/*"
-          target: "/tmp/game-gallery-frontend/"
+          source: './apps/web/dist/*'
+          target: '/tmp/game-gallery-frontend/'
           strip_components: 3
           rm: true
           timeout: 15m
           command_timeout: 15m
 
-      # 通过SSH部署到服务器
+      # ===== fund-tracker 子前端 apps/fund =====
+      - name: Build fund frontend
+        working-directory: ./apps/fund
+        env:
+          VITE_BASE_PATH: /
+        run: npm run build
+
+      - name: Push fund to server
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.SSH_PORT || 22 }}
+          source: './apps/fund/dist/*'
+          target: '/tmp/fund-frontend/'
+          strip_components: 3
+          rm: true
+          timeout: 10m
+          command_timeout: 10m
+
+      # ===== 服务器侧部署 =====
       - name: Deploy to Linux Server
         uses: appleboy/ssh-action@master
         with:
@@ -79,26 +99,30 @@ jobs:
           timeout: 5m
           command_timeout: 5m
           script: |
-            # 部署前端文件
-            if [ -d /tmp/game-gallery-frontend ]; then
-              echo "Deploying frontend files..."
-              mkdir -p /opt/game-gallery/web/dist
-              rm -rf /opt/game-gallery/web/dist/*
-              cp -r /tmp/game-gallery-frontend/* /opt/game-gallery/web/dist/
-              rm -rf /tmp/game-gallery-frontend
+            set -e
 
-              echo "Frontend files deployed successfully"
-              echo "Files deployed to: /opt/game-gallery/web/dist"
-              echo "Served by degenerates-backend nginx at: https://degenerates.site"
-            else
-              echo "Frontend files not found!"
-              exit 1
+            # ----- web (game-gallery) -----
+            if [ -d /tmp/game-gallery-frontend ]; then
+              echo "Deploying web frontend..."
+              sudo mkdir -p /opt/game-gallery/web/dist
+              sudo rm -rf /opt/game-gallery/web/dist/*
+              sudo cp -r /tmp/game-gallery-frontend/* /opt/game-gallery/web/dist/
+              rm -rf /tmp/game-gallery-frontend
+              echo "✅ web → /opt/game-gallery/web/dist"
             fi
 
-      - name: Deployment Status
+            # ----- fund (fund-tracker frontend) -----
+            if [ -d /tmp/fund-frontend ]; then
+              echo "Deploying fund frontend..."
+              sudo mkdir -p /opt/fund-tracker/web/dist
+              sudo rm -rf /opt/fund-tracker/web/dist/*
+              sudo cp -r /tmp/fund-frontend/* /opt/fund-tracker/web/dist/
+              rm -rf /tmp/fund-frontend
+              echo "✅ fund → /opt/fund-tracker/web/dist"
+            fi
+
+      - name: Done
         run: |
-          echo "Frontend build and deployment completed successfully"
-          echo ""
-          echo "Frontend files: dist branch"
-          echo "Live URL: https://degenerates.site"
-          echo "API URL: https://degenerates.site/api"
+          echo "Deployment completed."
+          echo "  web:  https://degenerates.site"
+          echo "  fund: https://fund.degenerates.site"
