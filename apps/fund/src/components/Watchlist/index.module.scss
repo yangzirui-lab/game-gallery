@@ -4,3 +4,18 @@
   padding: 24px 8px;
   text-align: center;
 }
+
+.removeBtn {
+  background: transparent;
+  border: none;
+  color: var(--muted);
+  padding: 2px 4px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  &:hover {
+    color: var(--red);
+  }
+}

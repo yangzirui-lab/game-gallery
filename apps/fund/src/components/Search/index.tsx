@@ -1,23 +1,24 @@
-/* 搜索区：远端 fundsuggest + 本地 funds-index 模糊匹配 */
+/* 搜索区：调后端 /api/fund/search + /api/fund/realtime */
 import { useEffect, useRef, useState } from 'react'
 import classNames from 'classnames'
-import { fetchGz, loadFundsIndex, repoIssueUrl, searchFunds } from '@services/api'
-import type { FundIndexItem, GzData, SearchHit, WatchFund } from '@/types'
+import { addWatchlist, fetchGz, searchFunds } from '@services/api'
+import type { GzData, SearchHit, WatchFund } from '@/types'
 import { pct, pctClass } from '@/utils/format'
 import shared from '@/styles/shared.module.scss'
 import styles from './index.module.scss'
 
 interface Props {
   watchlist: WatchFund[]
+  onWatchlistChange?: () => void
 }
 
-export default function Search({ watchlist }: Props) {
+export default function Search({ watchlist, onWatchlistChange }: Props) {
   const [q, setQ] = useState('')
   const [results, setResults] = useState<SearchHit[]>([])
   const [showResults, setShowResults] = useState(false)
-  const [indexMeta, setIndexMeta] = useState('')
   const [quick, setQuick] = useState<{ hit: SearchHit; gz: GzData | null } | null>(null)
-  const indexRef = useRef<FundIndexItem[] | null>(null)
+  const [adding, setAdding] = useState(false)
+  const [addError, setAddError] = useState('')
   const debounceRef = useRef<number | null>(null)
   const wrapRef = useRef<HTMLDivElement | null>(null)
   const lastQueryRef = useRef('')
@@ -48,51 +49,37 @@ export default function Search({ watchlist }: Props) {
   async function doSearch(key: string) {
     if (key === lastQueryRef.current) return
     lastQueryRef.current = key
-
-    const remote = await searchFunds(key)
-
-    let local: SearchHit[] = []
-    if (key.length >= 2) {
-      if (!indexRef.current) {
-        indexRef.current = await loadFundsIndex()
-        setIndexMeta(`本地索引 ${indexRef.current.length} 只`)
-      }
-      const lower = key.toLowerCase()
-      local = indexRef.current
-        .filter(
-          (f) =>
-            f.code.startsWith(key) ||
-            f.name.toLowerCase().includes(lower) ||
-            (f.jp && f.jp.toLowerCase().includes(lower))
-        )
-        .slice(0, 30)
-        .map((f) => ({ code: f.code, name: f.name, type: f.type }))
-    }
-
-    const seen = new Set<string>()
-    const merged: SearchHit[] = []
-    for (const r of [...remote, ...local]) {
-      if (!r.code || seen.has(r.code)) continue
-      seen.add(r.code)
-      merged.push(r)
-      if (merged.length >= 20) break
-    }
-    setResults(merged)
+    const list = await searchFunds(key)
+    setResults(list)
     setShowResults(true)
   }
 
   async function showQuick(hit: SearchHit) {
     setShowResults(false)
     setQuick({ hit, gz: null })
+    setAddError('')
     const gz = await fetchGz(hit.code)
     setQuick({ hit, gz })
+  }
+
+  async function handleAdd() {
+    if (!quick) return
+    setAdding(true)
+    setAddError('')
+    try {
+      await addWatchlist(quick.hit.code, quick.hit.name)
+      onWatchlistChange?.()
+    } catch (e) {
+      setAddError(e instanceof Error ? e.message : String(e))
+    } finally {
+      setAdding(false)
+    }
   }
 
   return (
     <section className={shared.card}>
       <div className={shared.cardHead}>
         <h2>搜索基金</h2>
-        <span className="muted small">{indexMeta}</span>
       </div>
       <div className={styles.box} ref={wrapRef}>
         <input
@@ -113,7 +100,7 @@ export default function Search({ watchlist }: Props) {
                   <span className={styles.name}>
                     <span className="muted">{r.code}</span> {r.name}
                   </span>
-                  <span className={styles.type}>{r.type}</span>
+                  <span className={styles.type}>{r.ftype || r.type || ''}</span>
                 </li>
               ))
             )}
@@ -135,23 +122,24 @@ export default function Search({ watchlist }: Props) {
             上日净值 {quick.gz?.dwjz || '—'} · 估值 {quick.gz?.gsz || '—'} ·{' '}
             {quick.gz?.gztime || ''}
           </div>
+          {addError && <div className={classNames('small', styles.errorText)}>{addError}</div>}
           <div className={styles.actions}>
             <a className={styles.primary} href={`#/fund/${quick.hit.code}`}>
               查看详情
             </a>
             {watchlist.some((w) => w.code === quick.hit.code) ? (
-              <button type="button" className={classNames(shared.ghostBtn)} disabled>
+              <button type="button" className={shared.ghostBtn} disabled>
                 已在跟踪
               </button>
             ) : (
-              <a
+              <button
+                type="button"
                 className={shared.ghostBtn}
-                href={repoIssueUrl(quick.hit.code, quick.hit.name)}
-                target="_blank"
-                rel="noopener noreferrer"
+                onClick={() => void handleAdd()}
+                disabled={adding}
               >
-                加入跟踪
-              </a>
+                {adding ? '添加中…' : '加入跟踪'}
+              </button>
             )}
           </div>
         </div>

@@ -1,33 +1,35 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { ExternalLink } from 'lucide-react'
 import Watchlist from '@components/Watchlist'
 import Search from '@components/Search'
-import { loadGlobalMeta, loadWatchlist } from '@services/api'
-import type { GlobalMeta, WatchFund } from '@/types'
+import { loadWatchlist } from '@services/api'
+import type { WatchFund } from '@/types'
 import shared from '@/styles/shared.module.scss'
 
-const REPO_URL = 'https://github.com/YBoomer/fund-tracker'
+const REPO_URL = 'https://github.com/Catalyzer-dot/game-gallery/tree/main/apps/fund'
 
 export default function Home() {
   const [watchlist, setWatchlist] = useState<WatchFund[]>([])
-  const [meta, setMeta] = useState<GlobalMeta | null>(null)
+
+  const reload = useCallback(async () => {
+    try {
+      setWatchlist(await loadWatchlist())
+    } catch {
+      setWatchlist([])
+    }
+  }, [])
 
   useEffect(() => {
-    void (async () => {
-      const [wl, m] = await Promise.all([loadWatchlist(), loadGlobalMeta()])
-      setWatchlist(wl || [])
-      setMeta(m)
-    })()
-  }, [])
+    // 初次加载触发拉数据；setState 在异步 reload 内部，可接受
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    void reload()
+  }, [reload])
 
   return (
     <div className={shared.page}>
       <header className={shared.header}>
         <h1>Fund Tracker</h1>
         <div className={shared.meta}>
-          {meta?.last_update && (
-            <span>上次抓取 {new Date(meta.last_update).toLocaleString('zh-CN')}</span>
-          )}
           <a href={REPO_URL} target="_blank" rel="noopener noreferrer">
             repo <ExternalLink size={11} style={{ verticalAlign: 'middle' }} />
           </a>
@@ -35,8 +37,8 @@ export default function Home() {
       </header>
 
       <main className={shared.main}>
-        <Watchlist funds={watchlist} />
-        <Search watchlist={watchlist} />
+        <Watchlist funds={watchlist} onChange={reload} />
+        <Search watchlist={watchlist} onWatchlistChange={reload} />
       </main>
 
       <footer className={shared.footer}>

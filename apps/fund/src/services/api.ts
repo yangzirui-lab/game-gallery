@@ -1,13 +1,14 @@
 /**
  * fund-tracker 数据访问层
  *
- * - 跨域 JSONP：fundgz / fundsuggest（直接请求第三方）
- * - 同域 fetch：/api/quote、/data/*.json（由 nginx 反代到 fund-tracker docker 容器）
+ * 全部走后端 degenerates-backend 的 /api/fund/* 接口。
+ * 本文件不再直接调天天基金 / 新浪财经（CORS + GBK 由后端处理）。
  */
 import type {
   DailyData,
+  DailyRow,
   FundMeta,
-  GlobalMeta,
+  FundIndexItem,
   GzData,
   HoldingsData,
   IndustryEtfsMap,
@@ -17,157 +18,186 @@ import type {
   WatchFund,
 } from '@/types'
 
-const REPO_OWNER = 'YBoomer'
-const REPO_NAME = 'fund-tracker'
+const API_BASE = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '')
 
-interface JsonpgzWindow extends Window {
-  jsonpgz?: (data: GzData) => void
-  [callback: string]: unknown
+const url = (path: string): string => `${API_BASE}${path}`
+
+interface BackendError {
+  error?: string
+  message?: string
 }
 
-declare const window: JsonpgzWindow
-
-function loadScript(src: string): Promise<HTMLScriptElement> {
-  return new Promise((resolve, reject) => {
-    const s = document.createElement('script')
-    s.src = src
-    s.onload = () => resolve(s)
-    s.onerror = () => reject(new Error('jsonp load failed: ' + src))
-    document.head.appendChild(s)
+async function request<T>(path: string, init?: RequestInit): Promise<T> {
+  const res = await fetch(url(path), {
+    headers: { Accept: 'application/json' },
+    cache: 'no-cache',
+    ...init,
   })
-}
-
-/** 上游 fundgz 用固定函数名 jsonpgz()，需要临时 hook */
-export function fetchGz(code: string): Promise<GzData | null> {
-  return new Promise((resolve) => {
-    const url = `https://fundgz.1234567.com.cn/js/${code}.js?rt=${Date.now()}`
-    const orig = window.jsonpgz
-    let settled = false
-    const timer = window.setTimeout(() => {
-      if (!settled) {
-        settled = true
-        window.jsonpgz = orig
-        resolve(null)
-      }
-    }, 8000)
-    window.jsonpgz = (data: GzData) => {
-      if (settled) return
-      settled = true
-      window.clearTimeout(timer)
-      window.jsonpgz = orig
-      resolve(data)
+  if (!res.ok) {
+    let detail = ''
+    try {
+      const body = (await res.json()) as BackendError
+      detail = body.message || body.error || ''
+    } catch {
+      // ignore
     }
-    loadScript(url).then(
-      (s) => s.remove(),
-      () => {
-        if (!settled) {
-          settled = true
-          window.clearTimeout(timer)
-          window.jsonpgz = orig
-          resolve(null)
-        }
-      }
-    )
+    throw new Error(`${res.status} ${res.statusText}${detail ? ': ' + detail : ''}`)
+  }
+  return (await res.json()) as T
+}
+
+// ---------- watchlist ----------
+
+export const loadWatchlist = (): Promise<WatchFund[]> => request<WatchFund[]>('/api/fund/watchlist')
+
+export const addWatchlist = (code: string, name?: string, industry?: string): Promise<WatchFund> =>
+  request<WatchFund>('/api/fund/watchlist', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+    body: JSON.stringify({ code, name, industry }),
   })
+
+export const removeWatchlist = async (code: string): Promise<void> => {
+  const res = await fetch(url(`/api/fund/watchlist/${code}`), { method: 'DELETE' })
+  if (!res.ok && res.status !== 204) {
+    throw new Error(`${res.status} ${res.statusText}`)
+  }
 }
 
-interface FundSuggestRaw {
-  Datas?: Array<{
-    CODE: string
-    NAME: string
-    FundBaseInfo?: { SHORTNAME?: string; FTYPE?: string }
-  }>
+// ---------- search ----------
+
+export const searchFunds = async (key: string): Promise<SearchHit[]> => {
+  const trimmed = key.trim()
+  if (!trimmed) return []
+  return request<SearchHit[]>(`/api/fund/search?q=${encodeURIComponent(trimmed)}`)
 }
 
-export function searchFunds(key: string): Promise<SearchHit[]> {
-  return new Promise((resolve) => {
-    const cb = `cb_${Math.random().toString(36).slice(2, 9)}`
-    const url =
-      `https://fundsuggest.eastmoney.com/FundSearch/api/FundSearchAPI.ashx` +
-      `?callback=${cb}&m=1&key=${encodeURIComponent(key)}&_=${Date.now()}`
-    let settled = false
-    const timer = window.setTimeout(() => {
-      if (!settled) {
-        settled = true
-        delete window[cb]
-        resolve([])
-      }
-    }, 8000)
-    window[cb] = (raw: unknown) => {
-      if (settled) return
-      settled = true
-      window.clearTimeout(timer)
-      delete window[cb]
-      const r = raw as FundSuggestRaw
-      const list: SearchHit[] = (r?.Datas || []).map((x) => ({
-        code: x.CODE,
-        name: x.FundBaseInfo?.SHORTNAME || x.NAME,
-        type: x.FundBaseInfo?.FTYPE || '',
-      }))
-      resolve(list)
-    }
-    loadScript(url).catch(() => {
-      if (!settled) {
-        settled = true
-        window.clearTimeout(timer)
-        delete window[cb]
-        resolve([])
-      }
-    })
-  })
+/** 兼容旧 import：本地索引已迁到后端，前端不再 bundle */
+export const loadFundsIndex = async (): Promise<FundIndexItem[]> => []
+
+// ---------- industry ETFs ----------
+
+export const loadIndustryEtfs = (): Promise<IndustryEtfsMap> =>
+  request<IndustryEtfsMap>('/api/fund/industry-etfs')
+
+// ---------- per-fund 数据 ----------
+
+export const loadMeta = (code: string): Promise<FundMeta | null> =>
+  request<FundMeta>(`/api/fund/${code}/meta`).catch(() => null)
+
+interface IntradayBackendResp {
+  code: string
+  date: string
+  dwjz_prev: number | null
+  points: Array<{ ts: string; gsz: number; gszzl: number | null }>
 }
 
-async function loadJson<T>(path: string): Promise<T | null> {
+export const loadIntraday = async (code: string): Promise<IntradayData | null> => {
   try {
-    const res = await fetch(`/data/${path}`, { cache: 'no-cache' })
-    if (!res.ok) return null
-    return (await res.json()) as T
+    const data = await request<IntradayBackendResp>(`/api/fund/${code}/intraday`)
+    return {
+      date: data.date,
+      dwjz_prev: data.dwjz_prev != null ? String(data.dwjz_prev) : '',
+      points: (data.points || []).map((p) => ({
+        ts: p.ts,
+        gsz: String(p.gsz),
+        gszzl: p.gszzl != null ? String(p.gszzl) : '',
+      })),
+    }
   } catch {
     return null
   }
 }
 
-export const loadWatchlist = (): Promise<WatchFund[] | null> =>
-  loadJson<WatchFund[]>('watchlist.json')
+export const loadHoldings = async (code: string): Promise<HoldingsData | null> => {
+  try {
+    interface BackendHoldings {
+      code: string
+      report_date: string | null
+      rows: Array<{
+        rank: number
+        stock_code: string
+        stock_name: string
+        ratio: number
+        secid: string
+      }>
+    }
+    const data = await request<BackendHoldings>(`/api/fund/${code}/holdings`)
+    return {
+      report_date: data.report_date || '',
+      rows: data.rows.map((r) => ({
+        code: r.stock_code,
+        name: r.stock_name,
+        ratio: r.ratio,
+        secid: r.secid,
+      })),
+    }
+  } catch {
+    return null
+  }
+}
 
-export const loadIndustryEtfs = (): Promise<IndustryEtfsMap | null> =>
-  loadJson<IndustryEtfsMap>('industry_etfs.json')
+export const loadDaily = async (code: string): Promise<DailyData | null> => {
+  try {
+    interface BackendDailyRow {
+      date: string
+      dwjz: number
+      jzzzl: number | null
+    }
+    const rows = await request<BackendDailyRow[]>(`/api/fund/${code}/daily?days=90`)
+    const mapped: DailyRow[] = rows.map((r) => ({
+      date: r.date,
+      dwjz: String(r.dwjz),
+      jzzzl: r.jzzzl != null ? String(r.jzzzl) : '',
+    }))
+    return { rows: mapped }
+  } catch {
+    return null
+  }
+}
 
-export const loadGlobalMeta = (): Promise<GlobalMeta | null> => loadJson<GlobalMeta>('meta.json')
+// ---------- 实时估值（fundgz 代理）----------
 
-export const loadFundsIndex = async (): Promise<
-  Array<{ code: string; name: string; type: string; jp: string }>
-> => (await loadJson('funds-index.json')) || []
+interface BackendRealtimeResp {
+  code: string
+  name: string
+  jzrq: string
+  dwjz: string
+  gsz: string
+  gszzl: string
+  gztime: string
+}
 
-export const loadMeta = (code: string): Promise<FundMeta | null> =>
-  loadJson<FundMeta>(`${code}/meta.json`)
+export const fetchGz = async (code: string): Promise<GzData | null> => {
+  try {
+    const r = await request<BackendRealtimeResp>(`/api/fund/${code}/realtime`)
+    return {
+      fundcode: r.code,
+      name: r.name,
+      jzrq: r.jzrq,
+      dwjz: r.dwjz,
+      gsz: r.gsz,
+      gszzl: r.gszzl,
+      gztime: r.gztime,
+    }
+  } catch {
+    return null
+  }
+}
 
-export const loadIntraday = (code: string): Promise<IntradayData | null> =>
-  loadJson<IntradayData>(`${code}/intraday.json`)
+// ---------- 个股 / ETF 实时行情 ----------
 
-export const loadHoldings = (code: string): Promise<HoldingsData | null> =>
-  loadJson<HoldingsData>(`${code}/holdings.json`)
-
-export const loadDaily = (code: string): Promise<DailyData | null> =>
-  loadJson<DailyData>(`${code}/daily.json`)
-
-export async function fetchQuotes(secids: string[]): Promise<QuoteRow[]> {
+export const fetchQuotes = async (secids: string[]): Promise<QuoteRow[]> => {
   if (!secids.length) return []
   try {
-    const res = await fetch(`/api/quote?secids=${secids.join(',')}`, { cache: 'no-cache' })
-    if (!res.ok) return []
-    return (await res.json()) as QuoteRow[]
+    return await request<QuoteRow[]>(
+      `/api/fund/quote?secids=${encodeURIComponent(secids.join(','))}`
+    )
   } catch {
     return []
   }
 }
 
-export function repoIssueUrl(code: string, name: string): string {
-  const params = new URLSearchParams({
-    template: 'track-fund.yml',
-    title: `track: ${code}`,
-    code,
-    name,
-  })
-  return `https://github.com/${REPO_OWNER}/${REPO_NAME}/issues/new?${params}`
-}
+// ---------- 全局元信息（已不需要从仓库读）----------
+
+export const loadGlobalMeta = async (): Promise<{ last_update?: string } | null> => null

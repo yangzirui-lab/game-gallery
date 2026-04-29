@@ -1,7 +1,8 @@
 /* 跟踪清单表格 */
 import { useEffect, useState } from 'react'
 import classNames from 'classnames'
-import { fetchGz } from '@services/api'
+import { Trash2 } from 'lucide-react'
+import { fetchGz, removeWatchlist } from '@services/api'
 import type { GzData, WatchFund } from '@/types'
 import { pct, pctClass } from '@/utils/format'
 import shared from '@/styles/shared.module.scss'
@@ -9,7 +10,8 @@ import styles from './index.module.scss'
 
 interface Props {
   funds: WatchFund[]
-  onRefresh?: () => void
+  /** 当 watchlist 本身（增/删）变化时触发上层 reload */
+  onChange?: () => void
 }
 
 interface Row {
@@ -17,7 +19,7 @@ interface Row {
   gz?: GzData | null
 }
 
-export default function Watchlist({ funds, onRefresh }: Props) {
+export default function Watchlist({ funds, onChange }: Props) {
   const [rows, setRows] = useState<Row[]>([])
   const [loading, setLoading] = useState(false)
 
@@ -43,6 +45,17 @@ export default function Watchlist({ funds, onRefresh }: Props) {
     window.location.hash = `#/fund/${code}`
   }
 
+  async function handleRemove(e: React.MouseEvent, code: string, name: string) {
+    e.stopPropagation()
+    if (!confirm(`移除跟踪：${name} (${code})？`)) return
+    try {
+      await removeWatchlist(code)
+      onChange?.()
+    } catch (err) {
+      alert('移除失败：' + (err instanceof Error ? err.message : String(err)))
+    }
+  }
+
   return (
     <section className={shared.card}>
       <div className={shared.cardHead}>
@@ -50,10 +63,7 @@ export default function Watchlist({ funds, onRefresh }: Props) {
         <button
           type="button"
           className={shared.ghostBtn}
-          onClick={() => {
-            void refreshAll()
-            onRefresh?.()
-          }}
+          onClick={() => void refreshAll()}
           disabled={loading}
         >
           {loading ? '刷新中…' : '手动刷新'}
@@ -71,6 +81,7 @@ export default function Watchlist({ funds, onRefresh }: Props) {
               <th className="num">估值</th>
               <th className="num">日涨跌</th>
               <th className="num">更新</th>
+              <th className="num"></th>
             </tr>
           </thead>
           <tbody>
@@ -82,6 +93,16 @@ export default function Watchlist({ funds, onRefresh }: Props) {
                 <td className="num">{gz?.gsz || '—'}</td>
                 <td className={classNames('num', pctClass(gz?.gszzl))}>{pct(gz?.gszzl)}</td>
                 <td className="num muted">{(gz?.gztime || '').slice(-5) || '—'}</td>
+                <td className="num">
+                  <button
+                    type="button"
+                    className={styles.removeBtn}
+                    title="移除跟踪"
+                    onClick={(e) => void handleRemove(e, fund.code, fund.name)}
+                  >
+                    <Trash2 size={13} />
+                  </button>
+                </td>
               </tr>
             ))}
           </tbody>

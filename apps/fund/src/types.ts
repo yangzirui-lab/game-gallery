@@ -33,11 +33,12 @@ export interface GzData {
   gztime: string // 估值时间 yyyy-MM-dd HH:mm
 }
 
-/** fundsuggest 搜索结果 */
+/** 搜索结果（后端返回 ftype，旧前端代码用 type） */
 export interface SearchHit {
   code: string
   name: string
-  type: string
+  ftype?: string
+  type?: string
 }
 
 /** 持仓股 */

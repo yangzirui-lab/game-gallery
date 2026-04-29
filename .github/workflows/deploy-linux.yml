@@ -71,7 +71,7 @@ jobs:
           user_email: 'github-actions[bot]@users.noreply.github.com'
           commit_message: 'Deploy fund build ${{ github.sha }}'
 
-      # ===== 服务器侧部署：git pull（跨境比 SCP 稳得多） =====
+      # ===== 服务器侧部署：仅 frontend 静态文件，后端逻辑由 degenerates-backend 容器承担 =====
       - name: Deploy to Linux Server
         uses: appleboy/ssh-action@master
         with:
@@ -84,8 +84,7 @@ jobs:
           script: |
             set -e
 
-            # 大陆访问 GitHub 不稳，git clone 71MB 容易中断。
-            # 改用 archive tarball + curl 下载（带 retry 与 ghproxy fallback）。
+            # 大陆访问 GitHub 不稳。用 archive tarball + 镜像 fallback 下载。
             download_branch_to() {
               local repo="$1" branch="$2" target="$3"
               local tmp="/tmp/${branch}-$$.tar.gz"
@@ -112,35 +111,11 @@ jobs:
             }
 
             REPO=${{ github.repository }}
-            FT_REPO=YBoomer/fund-tracker
 
-            # ----- fund 静态先（小且关键）-----
+            # fund 静态先（小且关键）
             download_branch_to "$REPO" fund-dist /opt/fund-tracker/web/dist
 
-            # ----- fund-tracker docker container（只下 deploy/ + data/，不需要全 repo）-----
-            FT=/opt/fund-tracker
-            mkdir -p "$FT"
-            # 用 archive 同步 fund-tracker main 的 deploy/ 与 data/（用 .repo 临时目录，再选择性 cp）
-            download_branch_to "$FT_REPO" main "$FT/.repo"
-            cp -R "$FT/.repo/data/." "$FT/data/" 2>/dev/null || true
-            cp "$FT/.repo/deploy/docker-compose.yml" "$FT/"
-            cp "$FT/.repo/deploy/deploy.sh"          "$FT/"
-            cp "$FT/.repo/deploy/sync-data.sh"       "$FT/"
-            chmod +x "$FT/deploy.sh" "$FT/sync-data.sh"
-            rm -rf "$FT/.repo"
-
-            echo "📥 docker pull fund-tracker"
-            docker pull ghcr.io/yboomer/fund-tracker:latest
-
-            echo "🔄 docker compose up"
-            cd "$FT"
-            IMAGE=ghcr.io/yboomer/fund-tracker:latest docker compose up -d --force-recreate
-
-            sleep 3
-            docker compose ps fund-tracker || true
-            echo "✅ fund-tracker container deployed"
-
-            # ----- web 静态最后（71MB 即使慢也不影响 fund 已部署）-----
+            # web 静态后（71MB，失败不影响 fund）
             download_branch_to "$REPO" dist /opt/game-gallery/web/dist || \
               echo "⚠️ web 同步失败，但 fund 已成功部署"
 
