@@ -83,61 +83,66 @@ jobs:
           command_timeout: 10m
           script: |
             set -e
-            REPO_URL="https://github.com/${{ github.repository }}.git"
 
-            sync_branch_to() {
-              local branch="$1" target="$2"
-              echo "==== sync $branch → $target"
-              if [ -d "$target/.git" ]; then
-                cd "$target"
-                git fetch --depth 1 origin "$branch" --quiet
-                git reset --hard "origin/$branch" --quiet
-                git clean -fd --quiet
-              else
-                rm -rf "$target"
-                git clone --depth 1 --branch "$branch" "$REPO_URL" "$target"
-              fi
+            # 大陆访问 GitHub 不稳，git clone 71MB 容易中断。
+            # 改用 archive tarball + curl 下载（带 retry 与 ghproxy fallback）。
+            download_branch_to() {
+              local repo="$1" branch="$2" target="$3"
+              local tmp="/tmp/${branch}-$$.tar.gz"
+              local urls=(
+                "https://codeload.github.com/${repo}/tar.gz/refs/heads/${branch}"
+                "https://ghfast.top/https://github.com/${repo}/archive/refs/heads/${branch}.tar.gz"
+                "https://ghproxy.com/https://github.com/${repo}/archive/refs/heads/${branch}.tar.gz"
+              )
+              for url in "${urls[@]}"; do
+                echo "==== try: $url"
+                if curl -fsSL --retry 3 --retry-delay 5 --max-time 600 -o "$tmp" "$url"; then
+                  mkdir -p "$target"
+                  rm -rf "$target"/*
+                  tar -xzf "$tmp" --strip-components=1 -C "$target"
+                  rm -f "$tmp"
+                  echo "✅ $branch → $target"
+                  return 0
+                fi
+                rm -f "$tmp"
+                echo "⚠️  $url 失败，尝试下一个"
+              done
+              echo "❌ $branch 全部源失败"
+              return 1
             }
 
-            # ----- web 静态：dist 分支 -----
-            sync_branch_to dist /opt/game-gallery/web/dist
-            echo "✅ web → /opt/game-gallery/web/dist"
+            REPO=${{ github.repository }}
+            FT_REPO=YBoomer/fund-tracker
 
-            # ----- fund 静态：fund-dist 分支 -----
-            sync_branch_to fund-dist /opt/fund-tracker/web/dist
-            echo "✅ fund → /opt/fund-tracker/web/dist"
+            # ----- fund 静态先（小且关键）-----
+            download_branch_to "$REPO" fund-dist /opt/fund-tracker/web/dist
 
-            # ----- fund-tracker docker container -----
+            # ----- fund-tracker docker container（只下 deploy/ + data/，不需要全 repo）-----
             FT=/opt/fund-tracker
-            if [ ! -d "$FT/.git" ]; then
-              echo "首次 init fund-tracker repo → $FT"
-              # 用临时目录 clone，把 .git 搬过去（避免删除已存在的 web/dist 与 data）
-              git clone --depth 1 https://github.com/YBoomer/fund-tracker.git "${FT}.tmp"
-              mv "${FT}.tmp/.git" "$FT/"
-              cd "$FT"
-              # 用仓库 HEAD 覆盖工作树（已有 web/dist 与 data 不在仓库里，不会被动）
-              git checkout -- . 2>/dev/null || true
-              rm -rf "${FT}.tmp"
-            else
-              cd "$FT"
-              echo "🔄 git pull fund-tracker"
-              git fetch --depth 1 --quiet
-              git reset --hard origin/main --quiet
-            fi
+            mkdir -p "$FT"
+            # 用 archive 同步 fund-tracker main 的 deploy/ 与 data/（用 .repo 临时目录，再选择性 cp）
+            download_branch_to "$FT_REPO" main "$FT/.repo"
+            cp -R "$FT/.repo/data/." "$FT/data/" 2>/dev/null || true
+            cp "$FT/.repo/deploy/docker-compose.yml" "$FT/"
+            cp "$FT/.repo/deploy/deploy.sh"          "$FT/"
+            cp "$FT/.repo/deploy/sync-data.sh"       "$FT/"
+            chmod +x "$FT/deploy.sh" "$FT/sync-data.sh"
+            rm -rf "$FT/.repo"
 
-            # 把 deploy/* 拷到部署根方便 sync-data 找
-            cp deploy/docker-compose.yml deploy/deploy.sh deploy/sync-data.sh ./
-            chmod +x deploy.sh sync-data.sh
-
-            echo "📥 docker pull fund-tracker latest"
+            echo "📥 docker pull fund-tracker"
             docker pull ghcr.io/yboomer/fund-tracker:latest
 
             echo "🔄 docker compose up"
+            cd "$FT"
             IMAGE=ghcr.io/yboomer/fund-tracker:latest docker compose up -d --force-recreate
 
             sleep 3
             docker compose ps fund-tracker || true
             echo "✅ fund-tracker container deployed"
+
+            # ----- web 静态最后（71MB 即使慢也不影响 fund 已部署）-----
+            download_branch_to "$REPO" dist /opt/game-gallery/web/dist || \
+              echo "⚠️ web 同步失败，但 fund 已成功部署"
 
       - name: Done
         run: |
