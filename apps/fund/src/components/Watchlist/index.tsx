@@ -126,27 +126,39 @@ export default function Watchlist({ funds, onChange }: Props) {
                 </tr>
               </thead>
               <tbody>
-                {rows.map(({ fund, gz }) => (
-                  <tr key={fund.code} onClick={() => go(fund.code)}>
-                    <td>{fund.code}</td>
-                    <td>{fund.name}</td>
-                    <td className="num">{gz?.dwjz || '—'}</td>
-                    <td className="num">{gz?.gsz || '—'}</td>
-                    <td className={classNames('num', pctClass(gz?.gszzl))}>{pct(gz?.gszzl)}</td>
-                    <td className="num muted">{(gz?.gztime || '').slice(-5) || '—'}</td>
-                    <td className="num">
-                      <button
-                        type="button"
-                        className={styles.removeBtn}
-                        title="移除跟踪"
-                        aria-label={`移除跟踪 ${fund.name}`}
-                        onClick={(e) => void handleRemove(e, fund.code, fund.name)}
-                      >
-                        <Trash2 size={13} />
-                      </button>
-                    </td>
-                  </tr>
-                ))}
+                {rows.map(({ fund, gz }) => {
+                  const changeState = pctClass(gz?.gszzl)
+                  return (
+                    <tr key={fund.code} onClick={() => go(fund.code)}>
+                      <td>{fund.code}</td>
+                      <td>{fund.name}</td>
+                      <td className="num">{gz?.dwjz || '—'}</td>
+                      <td className="num">{gz?.gsz || '—'}</td>
+                      <td className="num">
+                        <span
+                          className={classNames(
+                            styles.changeBadge,
+                            changeState ? styles[changeState] : styles.flat
+                          )}
+                        >
+                          {pct(gz?.gszzl)}
+                        </span>
+                      </td>
+                      <td className="num muted">{(gz?.gztime || '').slice(-5) || '—'}</td>
+                      <td className="num">
+                        <button
+                          type="button"
+                          className={styles.removeBtn}
+                          title="移除跟踪"
+                          aria-label={`移除跟踪 ${fund.name}`}
+                          onClick={(e) => void handleRemove(e, fund.code, fund.name)}
+                        >
+                          <Trash2 size={13} />
+                        </button>
+                      </td>
+                    </tr>
+                  )
+                })}
               </tbody>
             </table>
           </div>
