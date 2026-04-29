@@ -39,11 +39,25 @@ export default function Detail({ code }: Props) {
   const [etfQuotes, setEtfQuotes] = useState<QuoteRow[]>([])
   const [industry, setIndustry] = useState<string>('—')
   const [fundName, setFundName] = useState<string>('')
+  const [loading, setLoading] = useState(true)
+  const [loadError, setLoadError] = useState('')
+  const [quoteRefreshing, setQuoteRefreshing] = useState(false)
   const intradayRef = useRef<IntradayData | null>(null)
+  const holdingsRef = useRef<HoldingsData | null>(null)
+  const etfsRef = useRef<IndustryEtf[]>([])
+  const loadRequestRef = useRef(0)
 
   useEffect(() => {
     intradayRef.current = intraday
   }, [intraday])
+
+  useEffect(() => {
+    holdingsRef.current = holdings
+  }, [holdings])
+
+  useEffect(() => {
+    etfsRef.current = etfs
+  }, [etfs])
 
   useEffect(() => {
     void initialLoad()
@@ -61,35 +75,63 @@ export default function Detail({ code }: Props) {
   }, [code])
 
   async function initialLoad() {
-    const [m, intra, hold, dly, etfMap, wl] = await Promise.all([
-      loadMeta(code),
-      loadIntraday(code),
-      loadHoldings(code),
-      loadDaily(code),
-      loadIndustryEtfs(),
-      loadWatchlist(),
-    ])
-    setMeta(m)
-    setIntraday(intra)
-    setHoldings(hold)
-    setDaily(dly)
+    const requestId = loadRequestRef.current + 1
+    loadRequestRef.current = requestId
+    setLoading(true)
+    setLoadError('')
+    setFundName(code)
+    setMeta(null)
+    setIntraday(null)
+    setHoldings(null)
+    setHoldingQuotes([])
+    setDaily(null)
+    setEtfs([])
+    setEtfQuotes([])
+    setIndustry('—')
+    try {
+      const [m, intra, hold, dly, etfMap, wl] = await Promise.all([
+        loadMeta(code),
+        loadIntraday(code),
+        loadHoldings(code),
+        loadDaily(code),
+        loadIndustryEtfs(),
+        loadWatchlist(),
+      ])
+      if (loadRequestRef.current !== requestId) return
 
-    const watch = (wl || []).find((x) => x.code === code)
-    const ind = watch?.industry || 'other'
-    setIndustry(ind)
-    setFundName(watch?.name || m?.name || code)
+      setMeta(m)
+      setIntraday(intra)
+      setHoldings(hold)
+      setDaily(dly)
 
-    const etfList = etfMap?.[ind] || []
-    setEtfs(etfList)
+      const watch = (wl || []).find((x) => x.code === code)
+      const ind = watch?.industry || 'other'
+      setIndustry(ind)
+      setFundName(watch?.name || m?.name || code)
 
-    if (hold?.rows.length) {
-      const secids = hold.rows.map((r) => r.secid).filter(Boolean)
-      if (secids.length) {
-        setHoldingQuotes(await fetchQuotes(secids))
+      const etfList = etfMap?.[ind] || []
+      setEtfs(etfList)
+
+      const holdingSecids = hold?.rows.map((r) => r.secid).filter(Boolean) || []
+      const etfSecids = etfList.map((e) => e.secid).filter(Boolean)
+      const [nextHoldingQuotes, nextEtfQuotes] = await Promise.all([
+        holdingSecids.length ? fetchQuotes(holdingSecids) : Promise.resolve([]),
+        etfSecids.length ? fetchQuotes(etfSecids) : Promise.resolve([]),
+      ])
+      if (loadRequestRef.current !== requestId) return
+      setHoldingQuotes(nextHoldingQuotes)
+      setEtfQuotes(nextEtfQuotes)
+
+      if (!m && !intra && !hold && !dly) {
+        setLoadError('基金数据暂时不可用，请稍后重试')
       }
-    }
-    if (etfList.length) {
-      setEtfQuotes(await fetchQuotes(etfList.map((e) => e.secid)))
+    } catch (e) {
+      if (loadRequestRef.current !== requestId) return
+      setLoadError(e instanceof Error ? e.message : String(e))
+    } finally {
+      if (loadRequestRef.current === requestId) {
+        setLoading(false)
+      }
     }
   }
 
@@ -109,15 +151,22 @@ export default function Detail({ code }: Props) {
   }
 
   async function refreshHoldingQuotes() {
-    if (!holdings?.rows.length) return
-    const secids = holdings.rows.map((r) => r.secid).filter(Boolean)
+    const currentHoldings = holdingsRef.current
+    if (!currentHoldings?.rows.length) return
+    const secids = currentHoldings.rows.map((r) => r.secid).filter(Boolean)
     if (!secids.length) return
     setHoldingQuotes(await fetchQuotes(secids))
   }
 
   async function manualRefreshQuotes() {
-    await refreshHoldingQuotes()
-    if (etfs.length) setEtfQuotes(await fetchQuotes(etfs.map((e) => e.secid)))
+    setQuoteRefreshing(true)
+    try {
+      await refreshHoldingQuotes()
+      const currentEtfs = etfsRef.current
+      if (currentEtfs.length) setEtfQuotes(await fetchQuotes(currentEtfs.map((e) => e.secid)))
+    } finally {
+      setQuoteRefreshing(false)
+    }
   }
 
   const intradayValues = useMemo(
@@ -175,6 +224,9 @@ export default function Detail({ code }: Props) {
       </header>
 
       <main className={shared.main}>
+        {loading && <div className={shared.statusBox}>加载基金数据…</div>}
+        {loadError && <div className={shared.errorBox}>{loadError}</div>}
+
         <section className={shared.card}>
           <div className={styles.metaGrid}>
             <div>
@@ -223,38 +275,45 @@ export default function Detail({ code }: Props) {
                 <span className="muted small"> 截止 {holdings.report_date}</span>
               )}
             </h2>
-            <button type="button" className={shared.ghostBtn} onClick={manualRefreshQuotes}>
-              刷新行情
+            <button
+              type="button"
+              className={shared.ghostBtn}
+              onClick={manualRefreshQuotes}
+              disabled={quoteRefreshing}
+            >
+              {quoteRefreshing ? '刷新中…' : '刷新行情'}
             </button>
           </div>
           {!holdings?.rows.length ? (
             <div className={styles.empty}>暂无持仓</div>
           ) : (
-            <table className={shared.dataTable}>
-              <thead>
-                <tr>
-                  <th>代码</th>
-                  <th>名称</th>
-                  <th className="num">占比</th>
-                  <th className="num">现价</th>
-                  <th className="num">涨跌</th>
-                </tr>
-              </thead>
-              <tbody>
-                {holdings.rows.map((r) => {
-                  const q = holdingsBySecid.get(r.secid)
-                  return (
-                    <tr key={r.code} className={styles.noHover}>
-                      <td>{r.code}</td>
-                      <td>{r.name}</td>
-                      <td className="num">{r.ratio.toFixed(2)}%</td>
-                      <td className="num">{num(q?.price)}</td>
-                      <td className={classNames('num', pctClass(q?.chg))}>{pct(q?.chg)}</td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
+            <div className={shared.tableScroll}>
+              <table className={shared.dataTable}>
+                <thead>
+                  <tr>
+                    <th>代码</th>
+                    <th>名称</th>
+                    <th className="num">占比</th>
+                    <th className="num">现价</th>
+                    <th className="num">涨跌</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {holdings.rows.map((r) => {
+                    const q = holdingsBySecid.get(r.secid)
+                    return (
+                      <tr key={r.code} className={styles.noHover}>
+                        <td>{r.code}</td>
+                        <td>{r.name}</td>
+                        <td className="num">{r.ratio.toFixed(2)}%</td>
+                        <td className="num">{num(q?.price)}</td>
+                        <td className={classNames('num', pctClass(q?.chg))}>{pct(q?.chg)}</td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
           )}
         </section>
 
@@ -265,29 +324,31 @@ export default function Detail({ code }: Props) {
           {!etfs.length ? (
             <div className={styles.empty}>未配置</div>
           ) : (
-            <table className={shared.dataTable}>
-              <thead>
-                <tr>
-                  <th>代码</th>
-                  <th>名称</th>
-                  <th className="num">现价</th>
-                  <th className="num">日涨跌</th>
-                </tr>
-              </thead>
-              <tbody>
-                {etfs.map((e) => {
-                  const q = etfsBySecid.get(e.secid)
-                  return (
-                    <tr key={e.code} className={styles.noHover}>
-                      <td>{e.code}</td>
-                      <td>{e.name}</td>
-                      <td className="num">{num(q?.price)}</td>
-                      <td className={classNames('num', pctClass(q?.chg))}>{pct(q?.chg)}</td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
+            <div className={shared.tableScroll}>
+              <table className={shared.dataTable}>
+                <thead>
+                  <tr>
+                    <th>代码</th>
+                    <th>名称</th>
+                    <th className="num">现价</th>
+                    <th className="num">日涨跌</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {etfs.map((e) => {
+                    const q = etfsBySecid.get(e.secid)
+                    return (
+                      <tr key={e.code} className={styles.noHover}>
+                        <td>{e.code}</td>
+                        <td>{e.name}</td>
+                        <td className="num">{num(q?.price)}</td>
+                        <td className={classNames('num', pctClass(q?.chg))}>{pct(q?.chg)}</td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
           )}
         </section>
 

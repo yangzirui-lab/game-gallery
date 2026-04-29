@@ -63,6 +63,7 @@
 
 .dataTable {
   width: 100%;
+  min-width: 640px;
   border-collapse: collapse;
   font-family: var(--mono);
   font-size: 13px;
@@ -98,17 +99,45 @@
   }
 }
 
+.tableScroll {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
 .ghostBtn {
   background: transparent;
   color: var(--muted);
   border: 1px solid var(--line);
   padding: 4px 12px;
   font-size: 12px;
+  min-height: 32px;
 
   &:hover {
     color: var(--text);
     border-color: var(--text);
   }
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.55;
+  }
+}
+
+.statusBox,
+.errorBox {
+  border: 1px solid var(--line);
+  background: var(--bg-card);
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: 12px;
+  margin-bottom: 16px;
+  padding: 10px 12px;
+}
+
+.errorBox {
+  border-color: rgba(248, 81, 73, 0.5);
+  color: var(--red);
 }
 
 .footer {
@@ -126,5 +155,52 @@
 
   &:hover {
     color: var(--text);
+  }
+}
+
+@media (max-width: 700px) {
+  .header {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 8px;
+    padding: 14px 16px;
+
+    .meta {
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+  }
+
+  .main {
+    padding: 12px 12px 24px;
+  }
+
+  .card {
+    padding: 12px;
+    margin-bottom: 12px;
+  }
+
+  .cardHead {
+    align-items: flex-start;
+    gap: 10px;
+    flex-direction: column;
+  }
+
+  .ghostBtn {
+    min-height: 44px;
+    padding: 8px 14px;
+  }
+
+  .dataTable {
+    font-size: 12px;
+
+    th,
+    td {
+      padding: 8px;
+    }
+  }
+
+  .footer {
+    padding: 14px 16px;
   }
 }

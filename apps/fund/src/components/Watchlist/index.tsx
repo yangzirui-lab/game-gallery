@@ -1,5 +1,5 @@
 /* 跟踪清单表格 */
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import classNames from 'classnames'
 import { Trash2 } from 'lucide-react'
 import { fetchGz, removeWatchlist } from '@services/api'
@@ -19,9 +19,31 @@ interface Row {
   gz?: GzData | null
 }
 
+async function mapWithConcurrency<T, R>(
+  items: T[],
+  limit: number,
+  mapper: (item: T) => Promise<R>
+): Promise<R[]> {
+  const results: R[] = []
+  let nextIndex = 0
+
+  async function worker() {
+    while (nextIndex < items.length) {
+      const currentIndex = nextIndex
+      nextIndex += 1
+      results[currentIndex] = await mapper(items[currentIndex])
+    }
+  }
+
+  await Promise.all(Array.from({ length: Math.min(limit, items.length) }, () => worker()))
+  return results
+}
+
 export default function Watchlist({ funds, onChange }: Props) {
   const [rows, setRows] = useState<Row[]>([])
   const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
+  const refreshRequestRef = useRef(0)
 
   useEffect(() => {
     setRows(funds.map((f) => ({ fund: f })))
@@ -33,12 +55,28 @@ export default function Watchlist({ funds, onChange }: Props) {
   }, [funds])
 
   async function refreshAll() {
+    const requestId = refreshRequestRef.current + 1
+    refreshRequestRef.current = requestId
     setLoading(true)
-    const results = await Promise.all(
-      funds.map(async (f) => ({ fund: f, gz: await fetchGz(f.code) }))
-    )
-    setRows(results)
-    setLoading(false)
+    setError('')
+    try {
+      const results = await mapWithConcurrency(funds, 4, async (f) => ({
+        fund: f,
+        gz: await fetchGz(f.code),
+      }))
+      if (refreshRequestRef.current !== requestId) return
+      setRows(results)
+      if (results.some((r) => r.gz === null)) {
+        setError('部分实时估值暂时不可用')
+      }
+    } catch (e) {
+      if (refreshRequestRef.current !== requestId) return
+      setError(e instanceof Error ? e.message : String(e))
+    } finally {
+      if (refreshRequestRef.current === requestId) {
+        setLoading(false)
+      }
+    }
   }
 
   function go(code: string) {
@@ -72,41 +110,47 @@ export default function Watchlist({ funds, onChange }: Props) {
       {!funds.length ? (
         <div className={styles.empty}>尚无跟踪基金，使用下方搜索添加</div>
       ) : (
-        <table className={shared.dataTable}>
-          <thead>
-            <tr>
-              <th>代码</th>
-              <th>简称</th>
-              <th className="num">上日净值</th>
-              <th className="num">估值</th>
-              <th className="num">日涨跌</th>
-              <th className="num">更新</th>
-              <th className="num"></th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map(({ fund, gz }) => (
-              <tr key={fund.code} onClick={() => go(fund.code)}>
-                <td>{fund.code}</td>
-                <td>{fund.name}</td>
-                <td className="num">{gz?.dwjz || '—'}</td>
-                <td className="num">{gz?.gsz || '—'}</td>
-                <td className={classNames('num', pctClass(gz?.gszzl))}>{pct(gz?.gszzl)}</td>
-                <td className="num muted">{(gz?.gztime || '').slice(-5) || '—'}</td>
-                <td className="num">
-                  <button
-                    type="button"
-                    className={styles.removeBtn}
-                    title="移除跟踪"
-                    onClick={(e) => void handleRemove(e, fund.code, fund.name)}
-                  >
-                    <Trash2 size={13} />
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        <>
+          {error && <div className={styles.inlineError}>{error}</div>}
+          <div className={shared.tableScroll}>
+            <table className={shared.dataTable}>
+              <thead>
+                <tr>
+                  <th>代码</th>
+                  <th>简称</th>
+                  <th className="num">上日净值</th>
+                  <th className="num">估值</th>
+                  <th className="num">日涨跌</th>
+                  <th className="num">更新</th>
+                  <th className="num"></th>
+                </tr>
+              </thead>
+              <tbody>
+                {rows.map(({ fund, gz }) => (
+                  <tr key={fund.code} onClick={() => go(fund.code)}>
+                    <td>{fund.code}</td>
+                    <td>{fund.name}</td>
+                    <td className="num">{gz?.dwjz || '—'}</td>
+                    <td className="num">{gz?.gsz || '—'}</td>
+                    <td className={classNames('num', pctClass(gz?.gszzl))}>{pct(gz?.gszzl)}</td>
+                    <td className="num muted">{(gz?.gztime || '').slice(-5) || '—'}</td>
+                    <td className="num">
+                      <button
+                        type="button"
+                        className={styles.removeBtn}
+                        title="移除跟踪"
+                        aria-label={`移除跟踪 ${fund.name}`}
+                        onClick={(e) => void handleRemove(e, fund.code, fund.name)}
+                      >
+                        <Trash2 size={13} />
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
       )}
     </section>
   )

@@ -17,11 +17,15 @@ export default function Search({ watchlist, onWatchlistChange }: Props) {
   const [results, setResults] = useState<SearchHit[]>([])
   const [showResults, setShowResults] = useState(false)
   const [quick, setQuick] = useState<{ hit: SearchHit; gz: GzData | null } | null>(null)
+  const [searching, setSearching] = useState(false)
+  const [searchError, setSearchError] = useState('')
   const [adding, setAdding] = useState(false)
   const [addError, setAddError] = useState('')
   const debounceRef = useRef<number | null>(null)
   const wrapRef = useRef<HTMLDivElement | null>(null)
   const lastQueryRef = useRef('')
+  const searchRequestRef = useRef(0)
+  const quickRequestRef = useRef(0)
 
   useEffect(() => {
     const onClick = (e: MouseEvent) => {
@@ -37,28 +41,56 @@ export default function Search({ watchlist, onWatchlistChange }: Props) {
     setQ(value)
     if (debounceRef.current) window.clearTimeout(debounceRef.current)
     if (!value.trim()) {
+      searchRequestRef.current += 1
       setResults([])
       setShowResults(false)
+      setSearching(false)
+      setSearchError('')
       return
     }
+    setSearching(true)
+    setSearchError('')
+    const requestId = searchRequestRef.current + 1
+    searchRequestRef.current = requestId
     debounceRef.current = window.setTimeout(() => {
-      void doSearch(value.trim())
+      void doSearch(value.trim(), requestId)
     }, 250)
   }
 
-  async function doSearch(key: string) {
-    if (key === lastQueryRef.current) return
+  async function doSearch(key: string, requestId: number) {
+    if (searchRequestRef.current !== requestId) return
+    if (key === lastQueryRef.current) {
+      setSearching(false)
+      setShowResults(true)
+      return
+    }
     lastQueryRef.current = key
-    const list = await searchFunds(key)
-    setResults(list)
-    setShowResults(true)
+    try {
+      const list = await searchFunds(key)
+      if (searchRequestRef.current !== requestId) return
+      setResults(list)
+      setShowResults(true)
+      setSearchError('')
+    } catch (e) {
+      if (searchRequestRef.current !== requestId) return
+      setResults([])
+      setShowResults(true)
+      setSearchError(e instanceof Error ? e.message : String(e))
+    } finally {
+      if (searchRequestRef.current === requestId) {
+        setSearching(false)
+      }
+    }
   }
 
   async function showQuick(hit: SearchHit) {
+    const requestId = quickRequestRef.current + 1
+    quickRequestRef.current = requestId
     setShowResults(false)
     setQuick({ hit, gz: null })
     setAddError('')
     const gz = await fetchGz(hit.code)
+    if (quickRequestRef.current !== requestId) return
     setQuick({ hit, gz })
   }
 
@@ -89,14 +121,29 @@ export default function Search({ watchlist, onWatchlistChange }: Props) {
           placeholder="输入基金代码或名称（中/拼音首字母均可）"
           autoComplete="off"
           className={styles.input}
+          aria-label="搜索基金"
         />
+        {searching && <div className={styles.searchHint}>搜索中…</div>}
         {showResults && (
           <ul className={styles.results}>
-            {!results.length ? (
-              <li className="muted">无结果</li>
+            {searchError ? (
+              <li className={styles.errorItem}>搜索失败：{searchError}</li>
+            ) : !results.length ? (
+              <li className="muted">{searching ? '搜索中…' : '无结果'}</li>
             ) : (
               results.map((r) => (
-                <li key={r.code} onClick={() => showQuick(r)}>
+                <li
+                  key={r.code}
+                  onClick={() => showQuick(r)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault()
+                      void showQuick(r)
+                    }
+                  }}
+                  role="button"
+                  tabIndex={0}
+                >
                   <span className={styles.name}>
                     <span className="muted">{r.code}</span> {r.name}
                   </span>
