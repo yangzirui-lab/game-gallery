@@ -90,6 +90,7 @@ function pickDateTicks(points: DailyChartPoint[]): DailyChartPoint[] {
 
 function DailyNavChart({ points }: { points: DailyChartPoint[] }) {
   const [hoverIndex, setHoverIndex] = useState<number | null>(null)
+  const [tooltipLeftPx, setTooltipLeftPx] = useState<number | null>(null)
   const width = 800
   const height = 190
   const padX = 38
@@ -126,14 +127,24 @@ function DailyNavChart({ points }: { points: DailyChartPoint[] }) {
   const active = points[activeIndex]
   const activeX = xForIndex(activeIndex)
   const activeY = yForValue(active.value)
-  const tooltipLeft = Math.min(Math.max((activeX / width) * 100, 12), 88)
+  const tooltipLeft =
+    tooltipLeftPx == null
+      ? `${Math.min(Math.max((activeX / width) * 100, 12), 88)}%`
+      : `${tooltipLeftPx}px`
 
   function handlePointerMove(event: PointerEvent<SVGSVGElement>) {
     const rect = event.currentTarget.getBoundingClientRect()
-    const ratio = (event.clientX - rect.left) / rect.width
-    const svgX = ratio * width
+    const scale = Math.min(rect.width / width, rect.height / height)
+    const renderedWidth = width * scale
+    const offsetX = (rect.width - renderedWidth) / 2
+    const svgX = (event.clientX - rect.left - offsetX) / scale
     const nextIndex = Math.round(((svgX - padX) / plotWidth) * (points.length - 1))
-    setHoverIndex(Math.max(0, Math.min(points.length - 1, nextIndex)))
+    const clampedIndex = Math.max(0, Math.min(points.length - 1, nextIndex))
+    setHoverIndex(clampedIndex)
+
+    const nextActiveX = xForIndex(clampedIndex)
+    const left = offsetX + nextActiveX * scale
+    setTooltipLeftPx(Math.min(Math.max(left, 72), rect.width - 72))
   }
 
   return (
@@ -143,7 +154,10 @@ function DailyNavChart({ points }: { points: DailyChartPoint[] }) {
         role="img"
         aria-label="近30天净值走势图"
         onPointerMove={handlePointerMove}
-        onPointerLeave={() => setHoverIndex(null)}
+        onPointerLeave={() => {
+          setHoverIndex(null)
+          setTooltipLeftPx(null)
+        }}
       >
         <path d={area} className={styles.navChartArea} />
         <line
@@ -181,7 +195,7 @@ function DailyNavChart({ points }: { points: DailyChartPoint[] }) {
         />
         <circle cx={activeX} cy={activeY} r="4" className={styles.navChartPoint} />
       </svg>
-      <div className={styles.navChartTooltip} style={{ left: `${tooltipLeft}%` }}>
+      <div className={styles.navChartTooltip} style={{ left: tooltipLeft }}>
         <span>{active.date}</span>
         <strong>净值 {active.value.toFixed(4)}</strong>
         <em className={pctClass(active.change)}>{pct(active.change)}</em>
