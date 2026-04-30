@@ -87,6 +87,20 @@ export const addWatchlist = (code: string, name?: string, industry?: string): Pr
     body: JSON.stringify({ code, name, industry }),
   })
 
+export const updateWatchlistPosition = (
+  code: string,
+  holdingAmount: number | null,
+  navPrice?: number | null
+): Promise<WatchFund> =>
+  request<WatchFund>(`/api/fund/watchlist/${code}/position`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      holding_amount: holdingAmount,
+      nav_price: navPrice,
+    }),
+  })
+
 export const removeWatchlist = async (code: string): Promise<void> => {
   const res = await fetch(url(`/api/fund/watchlist/${code}`), {
     method: 'DELETE',

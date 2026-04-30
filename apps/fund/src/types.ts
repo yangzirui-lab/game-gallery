@@ -5,6 +5,8 @@ export interface WatchFund {
   name: string
   industry: string
   added: string
+  holding_units?: number | null
+  holding_updated_at?: string | null
 }
 
 export interface IndustryEtf {

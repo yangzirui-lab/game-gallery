@@ -77,6 +77,95 @@
   justify-content: flex-end;
 }
 
+.positionCell {
+  align-items: center;
+  display: inline-flex;
+  gap: 6px;
+  justify-content: flex-end;
+  min-width: 150px;
+}
+
+.positionValue {
+  align-items: flex-end;
+  background: rgba(255, 255, 255, 0.035);
+  border: 1px solid rgba(146, 160, 170, 0.18);
+  border-radius: 8px;
+  color: var(--text);
+  cursor: pointer;
+  display: inline-flex;
+  flex-direction: column;
+  font-family: var(--mono);
+  font-size: 12px;
+  font-weight: 700;
+  gap: 3px;
+  justify-content: center;
+  min-height: 36px;
+  min-width: 104px;
+  padding: 5px 8px;
+
+  &:hover {
+    background: rgba(110, 198, 255, 0.08);
+    border-color: rgba(110, 198, 255, 0.38);
+  }
+}
+
+.positionDelta {
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.positionEditor {
+  align-items: center;
+  display: inline-flex;
+  gap: 6px;
+  justify-content: flex-end;
+
+  input {
+    background: rgba(3, 9, 14, 0.72);
+    border: 1px solid rgba(110, 198, 255, 0.42);
+    border-radius: 8px;
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 12px;
+    height: 34px;
+    max-width: 108px;
+    outline: none;
+    padding: 0 8px;
+    text-align: right;
+
+    &:focus {
+      border-color: var(--accent-strong);
+      box-shadow: 0 0 0 2px rgba(110, 198, 255, 0.16);
+    }
+  }
+}
+
+.iconBtn {
+  align-items: center;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--line);
+  color: var(--muted-strong);
+  cursor: pointer;
+  display: inline-flex;
+  height: 30px;
+  justify-content: center;
+  min-width: 30px;
+  padding: 0;
+
+  &:hover {
+    background: rgba(110, 198, 255, 0.09);
+    border-color: rgba(110, 198, 255, 0.45);
+    color: var(--accent-strong);
+  }
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+  }
+}
+
 .changeTag {
   background: rgba(255, 255, 255, 0.08);
   border: 1px solid rgba(255, 255, 255, 0.14);
@@ -113,5 +202,17 @@
 
   .currentChange {
     gap: 6px;
+  }
+
+  .positionCell {
+    min-width: 138px;
+  }
+
+  .positionValue {
+    min-width: 96px;
+  }
+
+  .positionEditor input {
+    max-width: 96px;
   }
 }

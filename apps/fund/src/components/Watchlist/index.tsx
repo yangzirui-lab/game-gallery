@@ -1,8 +1,8 @@
 /* 跟踪清单表格 */
 import { useEffect, useRef, useState } from 'react'
 import classNames from 'classnames'
-import { Trash2 } from 'lucide-react'
-import { fetchGz, loadDaily, removeWatchlist } from '@services/api'
+import { Check, Pencil, Trash2, X } from 'lucide-react'
+import { fetchGz, loadDaily, removeWatchlist, updateWatchlistPosition } from '@services/api'
 import type { DailyRow, GzData, WatchFund } from '@/types'
 import { pct, pctClass } from '@/utils/format'
 import shared from '@/styles/shared.module.scss'
@@ -66,6 +66,34 @@ function getCurrentChange(gz: GzData | null | undefined, daily: DailyRow | null 
   }
 }
 
+function getCurrentPrice(gz: GzData | null | undefined, daily: DailyRow | null | undefined) {
+  const hasTodayNav = Boolean(daily?.dwjz && daily.date === getTodayDateString())
+  if (hasTodayNav) {
+    return {
+      value: toNumber(daily?.dwjz),
+      label: '净值',
+    }
+  }
+
+  return {
+    value: toNumber(gz?.gsz),
+    label: gz?.gsz ? '估值' : '',
+  }
+}
+
+function formatMoney(value: number | null | undefined): string {
+  if (value == null || !Number.isFinite(value)) return '—'
+  return value.toLocaleString('zh-CN', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })
+}
+
+function moneyClass(value: number | null | undefined): string {
+  if (value == null || !Number.isFinite(value) || value === 0) return ''
+  return value > 0 ? 'up' : 'down'
+}
+
 async function fetchWatchlistSnapshot(fund: WatchFund): Promise<Row> {
   const [gz, daily] = await Promise.all([fetchGz(fund.code), loadDaily(fund.code, 3)])
   const latestRows = [...(daily?.rows || [])].sort((a, b) => b.date.localeCompare(a.date))
@@ -121,6 +149,9 @@ export default function Watchlist({ funds, onChange }: Props) {
   const [rows, setRows] = useState<Row[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [editingCode, setEditingCode] = useState('')
+  const [amountDraft, setAmountDraft] = useState('')
+  const [savingCode, setSavingCode] = useState('')
   const refreshRequestRef = useRef(0)
 
   useEffect(() => {
@@ -169,6 +200,64 @@ export default function Watchlist({ funds, onChange }: Props) {
     }
   }
 
+  function startEdit(e: React.MouseEvent, code: string, currentAmount: number | null) {
+    e.stopPropagation()
+    setEditingCode(code)
+    setAmountDraft(currentAmount != null ? currentAmount.toFixed(2) : '')
+  }
+
+  function cancelEdit(e: React.MouseEvent) {
+    e.stopPropagation()
+    setEditingCode('')
+    setAmountDraft('')
+  }
+
+  async function savePosition(e: React.SyntheticEvent, fund: WatchFund, navPrice: number | null) {
+    e.stopPropagation()
+    const raw = amountDraft.trim().replace(/,/g, '')
+    if (!raw) {
+      await clearPosition(e, fund)
+      return
+    }
+
+    const amount = Number(raw)
+    if (!Number.isFinite(amount) || amount < 0) {
+      alert('请输入有效的持有金额')
+      return
+    }
+    if (amount > 0 && (!navPrice || navPrice <= 0)) {
+      alert('当前净值或估值不可用，暂时不能设置持有金额')
+      return
+    }
+
+    try {
+      setSavingCode(fund.code)
+      await updateWatchlistPosition(fund.code, amount > 0 ? amount : null, navPrice)
+      setEditingCode('')
+      setAmountDraft('')
+      onChange?.()
+    } catch (err) {
+      alert('保存失败：' + (err instanceof Error ? err.message : String(err)))
+    } finally {
+      setSavingCode('')
+    }
+  }
+
+  async function clearPosition(e: React.SyntheticEvent, fund: WatchFund) {
+    e.stopPropagation()
+    try {
+      setSavingCode(fund.code)
+      await updateWatchlistPosition(fund.code, null, null)
+      setEditingCode('')
+      setAmountDraft('')
+      onChange?.()
+    } catch (err) {
+      alert('清空失败：' + (err instanceof Error ? err.message : String(err)))
+    } finally {
+      setSavingCode('')
+    }
+  }
+
   return (
     <section className={shared.card}>
       <div className={shared.cardHead}>
@@ -195,6 +284,7 @@ export default function Watchlist({ funds, onChange }: Props) {
                   <th>简称</th>
                   <th className="num">上交易日净值涨跌</th>
                   <th className="num">当前净值/估值涨跌</th>
+                  <th className="num">当前持有</th>
                   <th className="num">更新</th>
                   <th className="num"></th>
                 </tr>
@@ -204,6 +294,20 @@ export default function Watchlist({ funds, onChange }: Props) {
                   const previousState = pctClass(previousDaily?.jzzzl)
                   const currentChange = getCurrentChange(gz, daily)
                   const currentState = pctClass(currentChange.value)
+                  const currentPrice = getCurrentPrice(gz, daily)
+                  const previousPrice = toNumber(previousDaily?.dwjz || gz?.dwjz)
+                  const holdingUnits = fund.holding_units ?? null
+                  const holdingAmount =
+                    holdingUnits != null && currentPrice.value != null
+                      ? holdingUnits * currentPrice.value
+                      : null
+                  const holdingDelta =
+                    holdingUnits != null && currentPrice.value != null && previousPrice != null
+                      ? holdingUnits * (currentPrice.value - previousPrice)
+                      : null
+                  const holdingState = moneyClass(holdingDelta)
+                  const isEditing = editingCode === fund.code
+                  const isSaving = savingCode === fund.code
                   return (
                     <tr key={fund.code} onClick={() => go(fund.code)}>
                       <td>{fund.code}</td>
@@ -245,6 +349,80 @@ export default function Watchlist({ funds, onChange }: Props) {
                             </span>
                           )}
                         </span>
+                      </td>
+                      <td className="num" onClick={(e) => e.stopPropagation()}>
+                        {isEditing ? (
+                          <span className={styles.positionEditor}>
+                            <input
+                              value={amountDraft}
+                              inputMode="decimal"
+                              placeholder="10000"
+                              aria-label={`${fund.name} 持有金额`}
+                              onChange={(e) => setAmountDraft(e.target.value)}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                  void savePosition(e, fund, currentPrice.value)
+                                }
+                                if (e.key === 'Escape') {
+                                  setEditingCode('')
+                                  setAmountDraft('')
+                                }
+                              }}
+                            />
+                            <button
+                              type="button"
+                              className={styles.iconBtn}
+                              title="保存持有金额"
+                              disabled={isSaving}
+                              onClick={(e) => void savePosition(e, fund, currentPrice.value)}
+                            >
+                              <Check size={13} />
+                            </button>
+                            <button
+                              type="button"
+                              className={styles.iconBtn}
+                              title="取消"
+                              disabled={isSaving}
+                              onClick={cancelEdit}
+                            >
+                              <X size={13} />
+                            </button>
+                          </span>
+                        ) : (
+                          <span className={styles.positionCell}>
+                            <button
+                              type="button"
+                              className={styles.positionValue}
+                              title={
+                                currentPrice.label
+                                  ? `按当前${currentPrice.label} ${currentPrice.value ?? '—'} 计算`
+                                  : undefined
+                              }
+                              onClick={(e) => startEdit(e, fund.code, holdingAmount)}
+                            >
+                              <span>¥{formatMoney(holdingAmount)}</span>
+                              {holdingDelta != null && (
+                                <span
+                                  className={classNames(
+                                    styles.positionDelta,
+                                    holdingState ? styles[holdingState] : styles.flat
+                                  )}
+                                >
+                                  {holdingDelta > 0 ? '+' : ''}
+                                  {formatMoney(holdingDelta)}
+                                </span>
+                              )}
+                            </button>
+                            <button
+                              type="button"
+                              className={styles.iconBtn}
+                              title={holdingUnits != null ? '更新持有金额' : '设置持有金额'}
+                              onClick={(e) => startEdit(e, fund.code, holdingAmount)}
+                            >
+                              <Pencil size={12} />
+                            </button>
+                          </span>
+                        )}
                       </td>
                       <td className="num muted">{(currentChange.time || '').slice(-5) || '—'}</td>
                       <td className="num">
