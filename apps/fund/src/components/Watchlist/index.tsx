@@ -66,19 +66,37 @@ function getCurrentChange(gz: GzData | null | undefined, daily: DailyRow | null 
   }
 }
 
-function getCurrentPrice(gz: GzData | null | undefined, daily: DailyRow | null | undefined) {
-  const hasTodayNav = Boolean(daily?.dwjz && daily.date === getTodayDateString())
-  if (hasTodayNav) {
+function getLatestNavPrice(
+  daily: DailyRow | null | undefined,
+  previousDaily: DailyRow | null | undefined
+) {
+  const currentNav = toNumber(daily?.dwjz)
+  if (currentNav != null) {
     return {
-      value: toNumber(daily?.dwjz),
-      label: '净值',
+      value: currentNav,
+      date: daily?.date || '',
     }
   }
 
   return {
-    value: toNumber(gz?.gsz),
-    label: gz?.gsz ? '估值' : '',
+    value: toNumber(previousDaily?.dwjz),
+    date: previousDaily?.date || '',
   }
+}
+
+function getLatestNavDeltaPerUnit(
+  daily: DailyRow | null | undefined,
+  previousDaily: DailyRow | null | undefined
+) {
+  const currentNav = toNumber(daily?.dwjz)
+  const previousNav = toNumber(previousDaily?.dwjz)
+  if (currentNav != null && previousNav != null) return currentNav - previousNav
+
+  const latestNav = toNumber(previousDaily?.dwjz)
+  const latestChange = toNumber(previousDaily?.jzzzl)
+  if (latestNav == null || latestChange == null || latestChange <= -100) return null
+
+  return latestNav - latestNav / (1 + latestChange / 100)
 }
 
 function formatMoney(value: number | null | undefined): string {
@@ -258,15 +276,14 @@ export default function Watchlist({ funds, onChange }: Props) {
     }
   }
 
-  const totalProfit = rows.reduce<number | null>((total, { fund, gz, daily, previousDaily }) => {
+  const totalProfit = rows.reduce<number | null>((total, { fund, daily, previousDaily }) => {
     const holdingUnits = fund.holding_units ?? null
     if (holdingUnits == null) return total
 
-    const currentPrice = getCurrentPrice(gz, daily)
-    const previousPrice = toNumber(previousDaily?.dwjz || gz?.dwjz)
-    if (currentPrice.value == null || previousPrice == null) return total
+    const navDeltaPerUnit = getLatestNavDeltaPerUnit(daily, previousDaily)
+    if (navDeltaPerUnit == null) return total
 
-    return (total ?? 0) + holdingUnits * (currentPrice.value - previousPrice)
+    return (total ?? 0) + holdingUnits * navDeltaPerUnit
   }, null)
   const totalProfitState = moneyClass(totalProfit)
 
@@ -279,7 +296,7 @@ export default function Watchlist({ funds, onChange }: Props) {
             styles.totalProfit,
             totalProfitState ? styles[totalProfitState] : styles.flat
           )}
-          title="按当前净值/估值相对上一交易日净值计算"
+          title="按最新真实净值相对上一交易日净值计算"
         >
           <span>总盈亏</span>
           <strong>
@@ -328,16 +345,16 @@ export default function Watchlist({ funds, onChange }: Props) {
                   const previousState = pctClass(previousDaily?.jzzzl)
                   const currentChange = getCurrentChange(gz, daily)
                   const currentState = pctClass(currentChange.value)
-                  const currentPrice = getCurrentPrice(gz, daily)
-                  const previousPrice = toNumber(previousDaily?.dwjz || gz?.dwjz)
+                  const latestNavPrice = getLatestNavPrice(daily, previousDaily)
+                  const navDeltaPerUnit = getLatestNavDeltaPerUnit(daily, previousDaily)
                   const holdingUnits = fund.holding_units ?? null
                   const holdingAmount =
-                    holdingUnits != null && currentPrice.value != null
-                      ? holdingUnits * currentPrice.value
+                    holdingUnits != null && latestNavPrice.value != null
+                      ? holdingUnits * latestNavPrice.value
                       : null
                   const holdingDelta =
-                    holdingUnits != null && currentPrice.value != null && previousPrice != null
-                      ? holdingUnits * (currentPrice.value - previousPrice)
+                    holdingUnits != null && navDeltaPerUnit != null
+                      ? holdingUnits * navDeltaPerUnit
                       : null
                   const holdingState = moneyClass(holdingDelta)
                   const isEditing = editingCode === fund.code
@@ -407,7 +424,7 @@ export default function Watchlist({ funds, onChange }: Props) {
                               onChange={(e) => setAmountDraft(e.target.value)}
                               onKeyDown={(e) => {
                                 if (e.key === 'Enter') {
-                                  void savePosition(e, fund, currentPrice.value)
+                                  void savePosition(e, fund, latestNavPrice.value)
                                 }
                                 if (e.key === 'Escape') {
                                   setEditingCode('')
@@ -420,7 +437,7 @@ export default function Watchlist({ funds, onChange }: Props) {
                               className={styles.iconBtn}
                               title="保存持有金额"
                               disabled={isSaving}
-                              onClick={(e) => void savePosition(e, fund, currentPrice.value)}
+                              onClick={(e) => void savePosition(e, fund, latestNavPrice.value)}
                             >
                               <Check size={13} />
                             </button>
@@ -440,8 +457,8 @@ export default function Watchlist({ funds, onChange }: Props) {
                               type="button"
                               className={styles.positionValue}
                               title={
-                                currentPrice.label
-                                  ? `按当前${currentPrice.label} ${currentPrice.value ?? '—'} 计算`
+                                latestNavPrice.date
+                                  ? `按最新净值 ${latestNavPrice.value ?? '—'}（${latestNavPrice.date}）计算`
                                   : undefined
                               }
                               onClick={(e) => startEdit(e, fund.code, holdingAmount)}
