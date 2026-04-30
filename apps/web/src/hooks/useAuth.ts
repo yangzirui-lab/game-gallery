@@ -6,11 +6,12 @@
 import { useState, useEffect, useCallback } from 'react'
 import {
   login as loginService,
+  register as registerService,
   logout as logoutService,
   isAuthenticated,
   getCurrentUser as getCurrentUserService,
 } from '@/services/auth'
-import type { User } from '@/types'
+import type { AuthActionResult, RegisterRequest, User } from '@/types'
 
 // ==================== Types ====================
 
@@ -18,7 +19,8 @@ interface UseAuthResult {
   isAuthenticated: boolean
   user: User | null
   isLoading: boolean
-  login: (username: string, password: string) => Promise<boolean>
+  login: (account: string, password: string) => Promise<AuthActionResult>
+  register: (params: RegisterRequest) => Promise<AuthActionResult>
   logout: () => Promise<void>
   refreshUser: () => void
 }
@@ -52,20 +54,42 @@ function useAuth(): UseAuthResult {
    * 登录 - 使用用户名和密码
    * Session Token 会通过 Cookie 自动管理
    */
-  const login = useCallback(async (username: string, password: string): Promise<boolean> => {
+  const login = useCallback(
+    async (account: string, password: string): Promise<AuthActionResult> => {
+      setIsLoading(true)
+
+      const result = await loginService({ account, password })
+
+      if (!result.user) {
+        setIsLoading(false)
+        return result
+      }
+
+      setUser(result.user)
+      setAuthenticated(true)
+      setIsLoading(false)
+      return result
+    },
+    []
+  )
+
+  /**
+   * 注册并自动登录
+   */
+  const register = useCallback(async (params: RegisterRequest): Promise<AuthActionResult> => {
     setIsLoading(true)
 
-    const user = await loginService({ username, password })
+    const result = await registerService(params)
 
-    if (!user) {
+    if (!result.user) {
       setIsLoading(false)
-      return false
+      return result
     }
 
-    setUser(user)
+    setUser(result.user)
     setAuthenticated(true)
     setIsLoading(false)
-    return true
+    return result
   }, [])
 
   /**
@@ -86,6 +110,7 @@ function useAuth(): UseAuthResult {
     user,
     isLoading,
     login,
+    register,
     logout,
     refreshUser,
   }

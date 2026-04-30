@@ -82,6 +82,27 @@ export const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://degenerates
 export const AUTH_LOGIN_API = `${API_BASE_URL}/api/auth/login/password`
 
 /**
+ * 用户注册接口
+ * 使用账号、显示名、密码和邀请码进行注册
+ * @method POST
+ * @param account - 登录账号（3-32 位，小写字母/数字/._-）
+ * @param username - 展示用户名
+ * @param password - 密码（8-72 位）
+ * @param inviteCode - 邀请码
+ * @returns 返回用户信息和 session token，注册成功后视为已登录
+ */
+export const AUTH_REGISTER_API = `${API_BASE_URL}/api/auth/register`
+
+/**
+ * 生成今日邀请码接口
+ * 已登录用户每天最多持有一个未使用的邀请码
+ * @method POST
+ * @requires Authorization header with Bearer token
+ * @returns 返回今日邀请码；若今日已生成且未使用，则返回同一邀请码
+ */
+export const AUTH_INVITE_CODES_API = `${API_BASE_URL}/api/auth/invite-codes`
+
+/**
  * 用户登出接口
  * 退出登录并删除服务端的 session token
  * @method POST
