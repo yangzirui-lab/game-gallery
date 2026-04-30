@@ -126,6 +126,7 @@ function DailyNavChart({ points }: { points: DailyChartPoint[] }) {
   const active = points[activeIndex]
   const activeX = xForIndex(activeIndex)
   const activeY = yForValue(active.value)
+  const tooltipLeft = Math.min(Math.max((activeX / width) * 100, 12), 88)
 
   function handlePointerMove(event: PointerEvent<SVGSVGElement>) {
     const rect = event.currentTarget.getBoundingClientRect()
@@ -139,6 +140,7 @@ function DailyNavChart({ points }: { points: DailyChartPoint[] }) {
     <div className={styles.navChart}>
       <svg
         viewBox={`0 0 ${width} ${height}`}
+        preserveAspectRatio="none"
         role="img"
         aria-label="近30天净值走势图"
         onPointerMove={handlePointerMove}
@@ -180,7 +182,7 @@ function DailyNavChart({ points }: { points: DailyChartPoint[] }) {
         />
         <circle cx={activeX} cy={activeY} r="4" className={styles.navChartPoint} />
       </svg>
-      <div className={styles.navChartTooltip}>
+      <div className={styles.navChartTooltip} style={{ left: `${tooltipLeft}%` }}>
         <span>{active.date}</span>
         <strong>净值 {active.value.toFixed(4)}</strong>
         <em className={pctClass(active.change)}>{pct(active.change)}</em>

@@ -105,12 +105,14 @@
   display: inline-flex;
   font-family: var(--mono);
   gap: 10px;
-  left: 14px;
   min-height: 34px;
   padding: 6px 9px;
   pointer-events: none;
   position: absolute;
   top: 12px;
+  transform: translateX(-50%);
+  transition: left 80ms ease-out;
+  white-space: nowrap;
 
   span {
     color: var(--muted);
