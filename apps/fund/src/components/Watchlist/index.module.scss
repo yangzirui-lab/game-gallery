@@ -38,6 +38,49 @@
   padding: 9px 10px;
 }
 
+.watchTable {
+  min-width: 940px;
+  table-layout: fixed;
+
+  th,
+  td {
+    overflow: hidden;
+  }
+
+  td:nth-child(2) {
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+.codeCol {
+  width: 82px;
+}
+
+.nameCol {
+  width: auto;
+}
+
+.prevChangeCol {
+  width: 148px;
+}
+
+.currentChangeCol {
+  width: 168px;
+}
+
+.positionCol {
+  width: 188px;
+}
+
+.updateCol {
+  width: 72px;
+}
+
+.actionCol {
+  width: 48px;
+}
+
 .changeBadge {
   align-items: center;
   background: rgba(146, 160, 170, 0.08);
@@ -77,12 +120,22 @@
   justify-content: flex-end;
 }
 
+.currentChangeGroup {
+  align-items: flex-end;
+  display: inline-flex;
+  flex-direction: column;
+  gap: 4px;
+  justify-content: center;
+  min-height: 38px;
+}
+
 .positionCell {
   align-items: center;
   display: inline-flex;
   gap: 6px;
   justify-content: flex-end;
-  min-width: 150px;
+  min-width: 168px;
+  width: 168px;
 }
 
 .positionValue {
@@ -90,6 +143,7 @@
   background: rgba(255, 255, 255, 0.035);
   border: 1px solid rgba(146, 160, 170, 0.18);
   border-radius: 8px;
+  box-sizing: border-box;
   color: var(--text);
   cursor: pointer;
   display: inline-flex;
@@ -100,7 +154,8 @@
   gap: 3px;
   justify-content: center;
   min-height: 36px;
-  min-width: 104px;
+  min-width: 132px;
+  width: 132px;
   padding: 5px 8px;
 
   &:hover {
@@ -109,11 +164,20 @@
   }
 }
 
-.positionDelta {
+.changeAmount {
+  align-items: center;
+  background: rgba(146, 160, 170, 0.08);
+  border: 1px solid rgba(146, 160, 170, 0.18);
+  border-radius: 999px;
   color: var(--muted);
-  font-size: 10px;
+  display: inline-flex;
+  font-family: var(--mono);
+  font-size: 11px;
   font-weight: 700;
+  justify-content: center;
   line-height: 1;
+  min-width: 74px;
+  padding: 3px 8px;
 }
 
 .positionEditor {
@@ -121,16 +185,19 @@
   display: inline-flex;
   gap: 6px;
   justify-content: flex-end;
+  min-width: 168px;
+  width: 168px;
 
   input {
     background: rgba(3, 9, 14, 0.72);
     border: 1px solid rgba(110, 198, 255, 0.42);
     border-radius: 8px;
+    box-sizing: border-box;
     color: var(--text);
     font-family: var(--mono);
     font-size: 12px;
     height: 34px;
-    max-width: 108px;
+    width: 96px;
     outline: none;
     padding: 0 8px;
     text-align: right;
@@ -146,9 +213,11 @@
   align-items: center;
   background: rgba(255, 255, 255, 0.03);
   border: 1px solid var(--line);
+  box-sizing: border-box;
   color: var(--muted-strong);
   cursor: pointer;
   display: inline-flex;
+  flex: 0 0 30px;
   height: 30px;
   justify-content: center;
   min-width: 30px;
@@ -205,14 +274,14 @@
   }
 
   .positionCell {
-    min-width: 138px;
+    min-width: 168px;
   }
 
   .positionValue {
-    min-width: 96px;
+    min-width: 132px;
   }
 
   .positionEditor input {
-    max-width: 96px;
+    width: 96px;
   }
 }

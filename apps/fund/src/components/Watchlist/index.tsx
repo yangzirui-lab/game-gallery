@@ -277,7 +277,16 @@ export default function Watchlist({ funds, onChange }: Props) {
         <>
           {error && <div className={styles.inlineError}>{error}</div>}
           <div className={shared.tableScroll}>
-            <table className={shared.dataTable}>
+            <table className={classNames(shared.dataTable, styles.watchTable)}>
+              <colgroup>
+                <col className={styles.codeCol} />
+                <col className={styles.nameCol} />
+                <col className={styles.prevChangeCol} />
+                <col className={styles.currentChangeCol} />
+                <col className={styles.positionCol} />
+                <col className={styles.updateCol} />
+                <col className={styles.actionCol} />
+              </colgroup>
               <thead>
                 <tr>
                   <th>代码</th>
@@ -324,28 +333,44 @@ export default function Watchlist({ funds, onChange }: Props) {
                         </span>
                       </td>
                       <td className="num">
-                        <span className={styles.currentChange}>
-                          <span
-                            title={
-                              currentChange.time
-                                ? `${currentChange.label || '数据'}时间 ${currentChange.time}`
-                                : undefined
-                            }
-                            className={classNames(
-                              styles.changeBadge,
-                              currentState ? styles[currentState] : styles.flat
-                            )}
-                          >
-                            {pct(currentChange.value)}
-                          </span>
-                          {currentChange.label && (
+                        <span className={styles.currentChangeGroup}>
+                          <span className={styles.currentChange}>
                             <span
+                              title={
+                                currentChange.time
+                                  ? `${currentChange.label || '数据'}时间 ${currentChange.time}`
+                                  : undefined
+                              }
                               className={classNames(
-                                styles.changeTag,
-                                currentChange.label === '估值' ? styles.estimateTag : styles.navTag
+                                styles.changeBadge,
+                                currentState ? styles[currentState] : styles.flat
                               )}
                             >
-                              {currentChange.label}
+                              {pct(currentChange.value)}
+                            </span>
+                            {currentChange.label && (
+                              <span
+                                className={classNames(
+                                  styles.changeTag,
+                                  currentChange.label === '估值'
+                                    ? styles.estimateTag
+                                    : styles.navTag
+                                )}
+                              >
+                                {currentChange.label}
+                              </span>
+                            )}
+                          </span>
+                          {holdingDelta != null && (
+                            <span
+                              className={classNames(
+                                styles.changeAmount,
+                                holdingState ? styles[holdingState] : styles.flat
+                              )}
+                              title="当前持有金额变化"
+                            >
+                              {holdingDelta > 0 ? '+' : ''}
+                              {formatMoney(holdingDelta)}
                             </span>
                           )}
                         </span>
@@ -401,17 +426,6 @@ export default function Watchlist({ funds, onChange }: Props) {
                               onClick={(e) => startEdit(e, fund.code, holdingAmount)}
                             >
                               <span>¥{formatMoney(holdingAmount)}</span>
-                              {holdingDelta != null && (
-                                <span
-                                  className={classNames(
-                                    styles.positionDelta,
-                                    holdingState ? styles[holdingState] : styles.flat
-                                  )}
-                                >
-                                  {holdingDelta > 0 ? '+' : ''}
-                                  {formatMoney(holdingDelta)}
-                                </span>
-                              )}
                             </button>
                             <button
                               type="button"
