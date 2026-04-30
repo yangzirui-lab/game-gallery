@@ -183,7 +183,7 @@ export default function Watchlist({ funds, onChange }: Props) {
         </button>
       </div>
       {!funds.length ? (
-        <div className={styles.empty}>尚无跟踪基金，使用下方搜索添加</div>
+        <div className={styles.empty}>尚无跟踪基金，可使用上方搜索添加</div>
       ) : (
         <>
           {error && <div className={styles.inlineError}>{error}</div>}
