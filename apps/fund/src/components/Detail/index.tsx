@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import type { PointerEvent } from 'react'
 import classNames from 'classnames'
 import {
   fetchGz,
@@ -72,6 +73,146 @@ function mergeDailyRows(current: DailyData | null, incoming: DailyData | null): 
   }
 }
 
+interface DailyChartPoint {
+  date: string
+  value: number
+  change: string
+}
+
+function formatShortDate(date: string): string {
+  const parts = date.split('-')
+  return parts.length === 3 ? `${parts[1]}-${parts[2]}` : date
+}
+
+function buildDailyChartPoints(rows: DailyData['rows']): DailyChartPoint[] {
+  return rows
+    .map((row, index) => {
+      const previous = rows[index - 1]
+      const change = deriveDailyChange(row.dwjz, previous?.dwjz || '', row.jzzzl)
+      return {
+        date: row.date,
+        value: Number(row.dwjz),
+        change,
+      }
+    })
+    .filter((point) => Number.isFinite(point.value))
+}
+
+function pickDateTicks(points: DailyChartPoint[]): DailyChartPoint[] {
+  if (points.length <= 6) return points
+
+  const indexes = new Set<number>()
+  const maxIndex = points.length - 1
+  for (let i = 0; i < 5; i += 1) {
+    indexes.add(Math.round((maxIndex * i) / 4))
+  }
+
+  return Array.from(indexes)
+    .sort((a, b) => a - b)
+    .map((index) => points[index])
+}
+
+function DailyNavChart({ points }: { points: DailyChartPoint[] }) {
+  const [hoverIndex, setHoverIndex] = useState<number | null>(null)
+  const width = 800
+  const height = 190
+  const padX = 38
+  const padTop = 16
+  const padBottom = 34
+  const plotWidth = width - padX * 2
+  const plotHeight = height - padTop - padBottom
+
+  if (points.length < 2) {
+    return <div className={styles.empty}>暂无历史净值数据</div>
+  }
+
+  const values = points.map((point) => point.value)
+  let min = Math.min(...values)
+  let max = Math.max(...values)
+  if (min === max) {
+    min -= 0.01
+    max += 0.01
+  }
+  const padding = (max - min) * 0.08
+  min -= padding
+  max += padding
+
+  const xForIndex = (index: number) => padX + (plotWidth * index) / (points.length - 1)
+  const yForValue = (value: number) => padTop + ((max - value) / (max - min)) * plotHeight
+  const line = points
+    .map(
+      (point, index) => `${index === 0 ? 'M' : 'L'}${xForIndex(index)},${yForValue(point.value)}`
+    )
+    .join(' ')
+  const area = `${line} L${xForIndex(points.length - 1)},${height - padBottom} L${padX},${height - padBottom} Z`
+  const ticks = pickDateTicks(points)
+  const activeIndex = hoverIndex ?? points.length - 1
+  const active = points[activeIndex]
+  const activeX = xForIndex(activeIndex)
+  const activeY = yForValue(active.value)
+
+  function handlePointerMove(event: PointerEvent<SVGSVGElement>) {
+    const rect = event.currentTarget.getBoundingClientRect()
+    const ratio = (event.clientX - rect.left) / rect.width
+    const svgX = ratio * width
+    const nextIndex = Math.round(((svgX - padX) / plotWidth) * (points.length - 1))
+    setHoverIndex(Math.max(0, Math.min(points.length - 1, nextIndex)))
+  }
+
+  return (
+    <div className={styles.navChart}>
+      <svg
+        viewBox={`0 0 ${width} ${height}`}
+        role="img"
+        aria-label="近30天净值走势图"
+        onPointerMove={handlePointerMove}
+        onPointerLeave={() => setHoverIndex(null)}
+      >
+        <path d={area} className={styles.navChartArea} />
+        <line
+          x1={padX}
+          x2={width - padX}
+          y1={height - padBottom}
+          y2={height - padBottom}
+          className={styles.navChartAxis}
+        />
+        {ticks.map((tick) => {
+          const index = points.findIndex((point) => point.date === tick.date)
+          const x = xForIndex(index)
+          return (
+            <g key={tick.date}>
+              <line
+                x1={x}
+                x2={x}
+                y1={height - padBottom}
+                y2={height - padBottom + 4}
+                className={styles.navChartTick}
+              />
+              <text x={x} y={height - 10} textAnchor="middle" className={styles.navChartLabel}>
+                {formatShortDate(tick.date)}
+              </text>
+            </g>
+          )
+        })}
+        <path d={line} className={styles.navChartLine} />
+        <line
+          x1={activeX}
+          x2={activeX}
+          y1={padTop}
+          y2={height - padBottom}
+          className={styles.navChartHoverLine}
+        />
+        <circle cx={activeX} cy={activeY} r="4" className={styles.navChartPoint} />
+      </svg>
+      <div className={styles.navChartTooltip}>
+        <span>{active.date}</span>
+        <strong>净值 {active.value.toFixed(4)}</strong>
+        <em className={pctClass(active.change)}>{pct(active.change)}</em>
+      </div>
+    </div>
+  )
+}
+
 export default function Detail({ code }: Props) {
   const [meta, setMeta] = useState<FundMeta | null>(null)
   const [intraday, setIntraday] = useState<IntradayData | null>(null)
@@ -132,7 +273,7 @@ export default function Detail({ code }: Props) {
         loadMeta(code),
         loadIntraday(code),
         loadHoldings(code),
-        loadDaily(code),
+        loadDaily(code, 30),
         loadWatchlist().catch(() => []),
       ])
       if (loadRequestRef.current !== requestId) return
@@ -244,21 +385,15 @@ export default function Detail({ code }: Props) {
         }
       : null
 
-  const dailyValues = useMemo(
-    () =>
-      [...latestDailyRows]
-        .reverse()
-        .map((row) => Number(row.dwjz))
-        .filter(Number.isFinite),
-    [latestDailyRows]
-  )
+  const dailyValues = useMemo(() => [...latestDailyRows].slice(0, 30).reverse(), [latestDailyRows])
+  const dailyChartPoints = useMemo(() => buildDailyChartPoints(dailyValues), [dailyValues])
   const dailyReturn = useMemo(() => {
-    if (dailyValues.length < 2) return null
-    const first = dailyValues[0]
-    const last = dailyValues[dailyValues.length - 1]
+    if (dailyChartPoints.length < 2) return null
+    const first = dailyChartPoints[0].value
+    const last = dailyChartPoints[dailyChartPoints.length - 1].value
     if (!first) return null
     return ((last - first) / first) * 100
-  }, [dailyValues])
+  }, [dailyChartPoints])
 
   const holdingsBySecid = useMemo(() => {
     const map = new Map<string, QuoteRow>()
@@ -385,10 +520,10 @@ export default function Detail({ code }: Props) {
 
         <section className={shared.card}>
           <div className={shared.cardHead}>
-            <h2>近 90 天净值</h2>
-            {daily?.rows.length && dailyReturn != null && (
+            <h2>近 30 天净值</h2>
+            {dailyChartPoints.length && dailyReturn != null && (
               <span className="muted small">
-                {daily.rows.length} 个交易日，累计{' '}
+                {dailyChartPoints.length} 个交易日，累计{' '}
                 <span className={pctClass(dailyReturn)}>
                   {dailyReturn >= 0 ? '+' : ''}
                   {dailyReturn.toFixed(2)}%
@@ -396,8 +531,8 @@ export default function Detail({ code }: Props) {
               </span>
             )}
           </div>
-          {dailyValues.length >= 2 ? (
-            <Sparkline data={dailyValues} height={120} color="#3fb950" />
+          {dailyChartPoints.length >= 2 ? (
+            <DailyNavChart points={dailyChartPoints} />
           ) : (
             <div className={styles.empty}>暂无历史净值数据</div>
           )}
