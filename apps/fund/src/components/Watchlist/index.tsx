@@ -443,16 +443,17 @@ export default function Watchlist({ funds, showAdvancedPosition, onChange }: Pro
 
   // 当前持有总盈亏：sum(当前持有价值) - sum(初始值)
   const holdingProfit = rows.reduce<number | null>((total, { fund, gz, daily, previousDaily }) => {
+    const holdingUnits = fund.holding_units ?? null
+    const navPrice = getNavPrice(gz, daily, previousDaily)
+    const mv = holdingUnits != null && navPrice.value != null ? holdingUnits * navPrice.value : null
     const originalAmount =
       fund.holding_amount ??
       (fund.holding_shares != null && fund.holding_cost_price != null
         ? fund.holding_shares * fund.holding_cost_price
-        : null)
+        : null) ??
+      mv
     if (originalAmount == null) return total
 
-    const holdingUnits = fund.holding_units ?? null
-    const navPrice = getNavPrice(gz, daily, previousDaily)
-    const mv = holdingUnits != null && navPrice.value != null ? holdingUnits * navPrice.value : null
     const rawHolding = mv ?? originalAmount
 
     const currentChange = getCurrentChange(gz, daily)
