@@ -68,6 +68,12 @@ function getCurrentChange(gz: GzData | null | undefined, daily: DailyRow | null 
     }
   }
 
+  // gz 的估值时间不是今天 → 今天没有开盘，不展示涨跌
+  const gzDate = gz?.gztime?.slice(0, 10)
+  if (!gz || gzDate !== getTodayDateString()) {
+    return { value: '', label: '', time: '' }
+  }
+
   return {
     value: gz?.gszzl || '',
     label: gz?.gszzl ? '估值' : '',
