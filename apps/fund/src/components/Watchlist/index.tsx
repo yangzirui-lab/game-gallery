@@ -421,17 +421,24 @@ export default function Watchlist({ funds, showAdvancedPosition, onChange }: Pro
   }
 
   const totalProfit = rows.reduce<number | null>((total, { fund, gz, daily, previousDaily }) => {
-    const holdingUnits = fund.holding_units ?? null
-    if (holdingUnits == null) return total
+    const originalAmount =
+      fund.holding_amount ??
+      (fund.holding_shares != null && fund.holding_cost_price != null
+        ? fund.holding_shares * fund.holding_cost_price
+        : null)
+    if (originalAmount == null) return total
 
+    const holdingUnits = fund.holding_units ?? null
     const navPrice = getNavPrice(gz, daily, previousDaily)
-    if (navPrice.value == null) return total
+    const mv = holdingUnits != null && navPrice.value != null ? holdingUnits * navPrice.value : null
+    const rawHolding = mv ?? originalAmount
 
     const currentChange = getCurrentChange(gz, daily)
-    const marketValue = holdingUnits * navPrice.value
-    const changeAmount = getChangeAmount(marketValue, currentChange.value)
-    if (changeAmount == null) return total
+    const changeAmount = currentChange.value
+      ? getChangeAmount(rawHolding, currentChange.value)
+      : getChangeAmount(rawHolding, previousDaily?.jzzzl)
 
+    if (changeAmount == null) return total
     return (total ?? 0) + changeAmount
   }, null)
   const totalProfitState = moneyClass(totalProfit)
@@ -508,13 +515,24 @@ export default function Watchlist({ funds, showAdvancedPosition, onChange }: Pro
                     (holdingShares != null && holdingCostPrice != null
                       ? holdingShares * holdingCostPrice
                       : null)
-                  const currentHolding = marketValue ?? costAmount
+                  const rawHolding = marketValue ?? costAmount
+                  // 没有当日涨跌（节假日/收盘后）时，用上一交易日涨跌更新持有价值
+                  const effectivePrevJzzzl = !currentChange.value
+                    ? toNumber(previousDaily?.jzzzl)
+                    : null
+                  const currentHolding =
+                    rawHolding != null && effectivePrevJzzzl != null
+                      ? rawHolding * (1 + effectivePrevJzzzl / 100)
+                      : rawHolding
                   const holdingAmount =
                     fund.holding_amount ??
                     (holdingShares != null && holdingCostPrice != null
                       ? holdingShares * holdingCostPrice
                       : marketValue)
-                  const holdingDelta = getChangeAmount(currentHolding, currentChange.value)
+                  // 当日有涨跌时才在"当前涨跌"列显示金额变动；节假日由"当前持有"列直接体现
+                  const holdingDelta = currentChange.value
+                    ? getChangeAmount(rawHolding, currentChange.value)
+                    : null
                   const holdingState = moneyClass(holdingDelta)
                   const holdingAmountPreview =
                     parsePositiveNumber(sharesDraft) != null &&
