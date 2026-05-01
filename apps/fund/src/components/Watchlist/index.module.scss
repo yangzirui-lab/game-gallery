@@ -38,7 +38,13 @@
   padding: 9px 10px;
 }
 
-.totalProfit {
+.profitGroup {
+  display: flex;
+  gap: 8px;
+  margin-left: auto;
+}
+
+.profitBadge {
   align-items: center;
   background: rgba(146, 160, 170, 0.08);
   border: 1px solid rgba(146, 160, 170, 0.18);
@@ -47,7 +53,6 @@
   display: inline-flex;
   font-family: var(--mono);
   gap: 8px;
-  margin-left: auto;
   min-height: 32px;
   padding: 5px 11px;
   white-space: nowrap;
@@ -374,7 +379,7 @@
 }
 
 @media (max-width: 700px) {
-  .totalProfit {
+  .profitGroup {
     margin-left: 0;
   }
 

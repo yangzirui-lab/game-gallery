@@ -420,7 +420,29 @@ export default function Watchlist({ funds, showAdvancedPosition, onChange }: Pro
     }
   }
 
-  const totalProfit = rows.reduce<number | null>((total, { fund, gz, daily, previousDaily }) => {
+  // 上一交易日总盈亏：当前持有 × 上一交易日（或当日）涨跌幅
+  const prevDayProfit = rows.reduce<number | null>((total, { fund, gz, daily, previousDaily }) => {
+    const holdingUnits = fund.holding_units ?? null
+    const navPrice = getNavPrice(gz, daily, previousDaily)
+    const mv = holdingUnits != null && navPrice.value != null ? holdingUnits * navPrice.value : null
+    const costAmount =
+      fund.holding_amount ??
+      (fund.holding_shares != null && fund.holding_cost_price != null
+        ? fund.holding_shares * fund.holding_cost_price
+        : null)
+    const rawHolding = mv ?? costAmount
+    if (rawHolding == null) return total
+
+    const currentChange = getCurrentChange(gz, daily)
+    const changeAmount = currentChange.value
+      ? getChangeAmount(rawHolding, currentChange.value)
+      : getChangeAmount(rawHolding, previousDaily?.jzzzl)
+    if (changeAmount == null) return total
+    return (total ?? 0) + changeAmount
+  }, null)
+
+  // 当前持有总盈亏：sum(当前持有价值) - sum(初始值)
+  const holdingProfit = rows.reduce<number | null>((total, { fund, gz, daily, previousDaily }) => {
     const originalAmount =
       fund.holding_amount ??
       (fund.holding_shares != null && fund.holding_cost_price != null
@@ -434,31 +456,49 @@ export default function Watchlist({ funds, showAdvancedPosition, onChange }: Pro
     const rawHolding = mv ?? originalAmount
 
     const currentChange = getCurrentChange(gz, daily)
-    const changeAmount = currentChange.value
-      ? getChangeAmount(rawHolding, currentChange.value)
-      : getChangeAmount(rawHolding, previousDaily?.jzzzl)
-
-    if (changeAmount == null) return total
-    return (total ?? 0) + changeAmount
+    const effectivePrevJzzzl = !currentChange.value ? toNumber(previousDaily?.jzzzl) : null
+    const currentHolding =
+      rawHolding != null && effectivePrevJzzzl != null
+        ? rawHolding * (1 + effectivePrevJzzzl / 100)
+        : rawHolding
+    if (currentHolding == null) return total
+    return (total ?? 0) + (currentHolding - originalAmount)
   }, null)
-  const totalProfitState = moneyClass(totalProfit)
+
+  const prevDayProfitState = moneyClass(prevDayProfit)
+  const holdingProfitState = moneyClass(holdingProfit)
 
   return (
     <section className={shared.card}>
       <div className={shared.cardHead}>
         <h2>跟踪清单</h2>
-        <div
-          className={classNames(
-            styles.totalProfit,
-            totalProfitState ? styles[totalProfitState] : styles.flat
-          )}
-          title="按当前涨跌百分比和当前持有金额计算"
-        >
-          <span>总盈亏</span>
-          <strong>
-            {totalProfit != null && totalProfit > 0 ? '+' : ''}
-            {formatMoney(totalProfit)}
-          </strong>
+        <div className={styles.profitGroup}>
+          <div
+            className={classNames(
+              styles.profitBadge,
+              prevDayProfitState ? styles[prevDayProfitState] : styles.flat
+            )}
+            title="上一交易日涨跌幅应用于当前持有"
+          >
+            <span>昨日盈亏</span>
+            <strong>
+              {prevDayProfit != null && prevDayProfit > 0 ? '+' : ''}
+              {formatMoney(prevDayProfit)}
+            </strong>
+          </div>
+          <div
+            className={classNames(
+              styles.profitBadge,
+              holdingProfitState ? styles[holdingProfitState] : styles.flat
+            )}
+            title="当前持有总价值 - 初始值之和"
+          >
+            <span>持有盈亏</span>
+            <strong>
+              {holdingProfit != null && holdingProfit > 0 ? '+' : ''}
+              {formatMoney(holdingProfit)}
+            </strong>
+          </div>
         </div>
         <button
           type="button"
