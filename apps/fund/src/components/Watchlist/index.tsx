@@ -763,21 +763,22 @@ export default function Watchlist({ funds, portfolio, showAdvancedPosition, onCh
                             onMouseLeave={() => scheduleCloseHoldingPopover(fund.code)}
                           >
                             <span className={styles.positionCell}>
-                              <button
-                                type="button"
-                                className={styles.positionValue}
+                              <span
+                                className={classNames(
+                                  styles.positionValue,
+                                  holdingAmount == null && styles.emptyPositionValue
+                                )}
                                 title={
                                   shares != null && costPrice != null
                                     ? `${formatValue(shares, 2)} 份 × ¥${formatValue(costPrice, 4)}${totalPositionProfit != null ? `，总盈亏 ${totalPositionProfit > 0 ? '+' : ''}${formatMoney(totalPositionProfit)}` : ''}`
-                                    : navPrice.date
-                                      ? `按最新真实净值 ${navPrice.value ?? '—'}（${navPrice.date}）计算`
-                                      : undefined
+                                    : '尚未设置当前持有'
                                 }
-                                onClick={(e) => startEdit(e, fund.code, holdingAmount)}
                               >
-                                <span>¥{formatMoney(holdingAmount)}</span>
+                                <span>
+                                  {holdingAmount != null ? `¥${formatMoney(holdingAmount)}` : '¥0'}
+                                </span>
                                 {positionMeta && <em>{positionMeta}</em>}
-                              </button>
+                              </span>
                               <button
                                 type="button"
                                 className={styles.iconBtn}

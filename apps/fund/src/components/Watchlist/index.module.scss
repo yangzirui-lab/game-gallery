@@ -196,7 +196,6 @@
   border-radius: 8px;
   box-sizing: border-box;
   color: var(--text);
-  cursor: pointer;
   display: inline-flex;
   flex-direction: column;
   font-family: var(--mono);
@@ -224,11 +223,13 @@
     text-overflow: ellipsis;
     white-space: nowrap;
   }
+}
 
-  &:hover {
-    background: rgba(110, 198, 255, 0.08);
-    border-color: rgba(110, 198, 255, 0.38);
-  }
+.emptyPositionValue {
+  align-items: center;
+  border-style: dashed;
+  color: var(--muted);
+  font-weight: 600;
 }
 
 .changeAmount {
