@@ -164,8 +164,9 @@
 
 .currentChangeGroup {
   align-items: center;
-  display: inline-flex;
+  display: inline-grid;
   gap: 6px;
+  grid-template-columns: 68px 42px 76px;
   justify-content: flex-end;
   min-height: 36px;
   max-width: 100%;
@@ -244,8 +245,13 @@
   font-weight: 700;
   justify-content: center;
   line-height: 1;
-  min-width: 70px;
+  min-width: 76px;
   padding: 3px 7px;
+}
+
+.changePlaceholder {
+  opacity: 0;
+  pointer-events: none;
 }
 
 .positionEditor {
@@ -451,6 +457,7 @@
 
   .currentChangeGroup {
     gap: 6px;
+    grid-template-columns: 68px 36px 58px;
   }
 
   .watchTable {

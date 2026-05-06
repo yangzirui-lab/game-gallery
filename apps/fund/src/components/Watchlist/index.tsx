@@ -643,28 +643,31 @@ export default function Watchlist({ funds, portfolio, showAdvancedPosition, onCh
                           >
                             {pct(currentChange.value)}
                           </span>
-                          {currentChange.label && (
-                            <span
-                              className={classNames(
-                                styles.changeTag,
-                                currentChange.label === '估值' ? styles.estimateTag : styles.navTag
-                              )}
-                            >
-                              {currentChange.label}
-                            </span>
-                          )}
-                          {currentProfit != null && (
-                            <span
-                              className={classNames(
-                                styles.changeAmount,
-                                currentProfitState ? styles[currentProfitState] : styles.flat
-                              )}
-                              title="按当前净值/估值涨跌和持有份额计算"
-                            >
-                              {currentProfit > 0 ? '+' : ''}
-                              {formatMoney(currentProfit)}
-                            </span>
-                          )}
+                          <span
+                            className={classNames(
+                              styles.changeTag,
+                              !currentChange.label && styles.changePlaceholder,
+                              currentChange.label === '估值' ? styles.estimateTag : styles.navTag
+                            )}
+                          >
+                            {currentChange.label || '—'}
+                          </span>
+                          <span
+                            className={classNames(
+                              styles.changeAmount,
+                              currentProfit == null && styles.changePlaceholder,
+                              currentProfitState ? styles[currentProfitState] : styles.flat
+                            )}
+                            title={
+                              currentProfit != null
+                                ? '按当前净值/估值涨跌和持有份额计算'
+                                : undefined
+                            }
+                          >
+                            {currentProfit != null
+                              ? `${currentProfit > 0 ? '+' : ''}${formatMoney(currentProfit)}`
+                              : '—'}
+                          </span>
                         </span>
                       </td>
                       <td
