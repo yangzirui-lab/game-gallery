@@ -478,6 +478,7 @@ export default function Watchlist({ funds, portfolio, showAdvancedPosition, onCh
     if (profit == null) return total
     return (total ?? 0) + profit
   }, null)
+  const totalPreviousProfitState = moneyClass(totalPreviousProfit)
   const totalCurrentProfit = rows.reduce<number | null>(
     (total, { fund, gz, daily, previousDaily }) => {
       const { shares } = getPositionBasis(fund)
@@ -513,7 +514,13 @@ export default function Watchlist({ funds, portfolio, showAdvancedPosition, onCh
               {formatMoney(totalProfit)}
             </strong>
           </div>
-          <div className={styles.totalCost} title="按上一交易日净值涨跌和持有份额合计">
+          <div
+            className={classNames(
+              styles.totalCost,
+              totalPreviousProfitState ? styles[totalPreviousProfitState] : styles.flat
+            )}
+            title="按上一交易日净值涨跌和持有份额合计"
+          >
             <span>上日盈亏</span>
             <strong>
               {totalPreviousProfit != null && totalPreviousProfit > 0 ? '+' : ''}
@@ -548,7 +555,7 @@ export default function Watchlist({ funds, portfolio, showAdvancedPosition, onCh
       ) : (
         <>
           {error && <div className={styles.inlineError}>{error}</div>}
-          <div className={shared.tableScroll}>
+          <div className={classNames(shared.tableScroll, styles.watchTableWrap)}>
             <table className={classNames(shared.dataTable, styles.watchTable)}>
               <colgroup>
                 <col className={styles.codeCol} />
@@ -584,15 +591,6 @@ export default function Watchlist({ funds, portfolio, showAdvancedPosition, onCh
                     shares != null && valuationPrice.value != null
                       ? shares * valuationPrice.value
                       : null
-                  const previousHoldingAmount =
-                    shares != null && previousDaily?.dwjz
-                      ? shares * Number(previousDaily.dwjz)
-                      : null
-                  const previousProfit = getDailyProfitFromEndingAmount(
-                    previousHoldingAmount,
-                    previousDaily?.jzzzl
-                  )
-                  const previousProfitState = moneyClass(previousProfit)
                   const currentProfit = getDailyProfitFromEndingAmount(
                     currentHoldingAmount,
                     currentChange.value
@@ -629,18 +627,6 @@ export default function Watchlist({ funds, portfolio, showAdvancedPosition, onCh
                         >
                           {pct(previousDaily?.jzzzl)}
                         </span>
-                        {previousProfit != null && (
-                          <span
-                            className={classNames(
-                              styles.changeAmount,
-                              previousProfitState ? styles[previousProfitState] : styles.flat
-                            )}
-                            title="按上一交易日净值涨跌和持有份额计算"
-                          >
-                            {previousProfit > 0 ? '+' : ''}
-                            {formatMoney(previousProfit)}
-                          </span>
-                        )}
                       </td>
                       <td className="num">
                         <span className={styles.currentChangeGroup}>
@@ -876,7 +862,9 @@ export default function Watchlist({ funds, portfolio, showAdvancedPosition, onCh
                           </div>
                         )}
                       </td>
-                      <td className="num muted">{(currentChange.time || '').slice(-5) || '—'}</td>
+                      <td className={classNames('num muted', styles.updateCell)}>
+                        {(currentChange.time || '').slice(-5) || '—'}
+                      </td>
                       <td className="num">
                         <button
                           type="button"
