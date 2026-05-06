@@ -350,14 +350,19 @@
 }
 
 .changeTag {
+  align-items: center;
   background: rgba(255, 255, 255, 0.08);
   border: 1px solid rgba(255, 255, 255, 0.14);
   border-radius: 999px;
   color: currentColor;
+  display: inline-flex;
   font-size: 10px;
   font-weight: 700;
+  justify-content: center;
   line-height: 1;
+  min-width: 42px;
   padding: 3px 6px;
+  text-align: center;
 }
 
 .estimateTag {
