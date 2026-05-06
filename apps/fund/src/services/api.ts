@@ -9,6 +9,7 @@ import type {
   DailyRow,
   FundDailyRankRow,
   FundMeta,
+  FundPortfolio,
   FundRankRow,
   FundIndexItem,
   GzData,
@@ -82,6 +83,9 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 // ---------- watchlist ----------
 
 export const loadWatchlist = (): Promise<WatchFund[]> => request<WatchFund[]>('/api/fund/watchlist')
+
+export const loadFundPortfolio = (): Promise<FundPortfolio> =>
+  request<FundPortfolio>('/api/fund/portfolio')
 
 export const addWatchlist = (code: string, name?: string, industry?: string): Promise<WatchFund> =>
   request<WatchFund>('/api/fund/watchlist', {

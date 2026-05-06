@@ -12,6 +12,11 @@ export interface WatchFund {
   holding_amount?: number | null
 }
 
+export interface FundPortfolio {
+  cash_amount: number
+  principal_amount: number
+}
+
 export interface IndustryEtf {
   code: string
   name: string

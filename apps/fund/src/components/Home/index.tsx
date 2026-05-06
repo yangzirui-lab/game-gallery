@@ -4,8 +4,13 @@ import Settings from '@components/Settings'
 import Watchlist from '@components/Watchlist'
 import Search from '@components/Search'
 import FundRankings from '@components/FundRankings'
-import { getSessionToken, isUnauthorizedError, loadWatchlist } from '@services/api'
-import type { WatchFund } from '@/types'
+import {
+  getSessionToken,
+  isUnauthorizedError,
+  loadFundPortfolio,
+  loadWatchlist,
+} from '@services/api'
+import type { FundPortfolio, WatchFund } from '@/types'
 import shared from '@/styles/shared.module.scss'
 
 const REPO_URL = 'https://github.com/Catalyzer-dot/game-gallery/tree/main/apps/fund'
@@ -13,6 +18,7 @@ const ADVANCED_POSITION_KEY = 'fund_tracker_show_advanced_position'
 
 export default function Home() {
   const [watchlist, setWatchlist] = useState<WatchFund[]>([])
+  const [portfolio, setPortfolio] = useState<FundPortfolio | null>(null)
   const [authRequired, setAuthRequired] = useState(false)
   const [showAdvancedPosition, setShowAdvancedPosition] = useState(() => {
     return window.localStorage.getItem(ADVANCED_POSITION_KEY) === '1'
@@ -21,15 +27,22 @@ export default function Home() {
   const reload = useCallback(async () => {
     if (!getSessionToken()) {
       setWatchlist([])
+      setPortfolio(null)
       setAuthRequired(true)
       return
     }
 
     try {
-      setWatchlist(await loadWatchlist())
+      const [nextWatchlist, nextPortfolio] = await Promise.all([
+        loadWatchlist(),
+        loadFundPortfolio(),
+      ])
+      setWatchlist(nextWatchlist)
+      setPortfolio(nextPortfolio)
       setAuthRequired(false)
     } catch (error) {
       setWatchlist([])
+      setPortfolio(null)
       setAuthRequired(isUnauthorizedError(error))
     }
   }, [])
@@ -73,6 +86,7 @@ export default function Home() {
             <Search watchlist={watchlist} onWatchlistChange={reload} />
             <Watchlist
               funds={watchlist}
+              portfolio={portfolio}
               onChange={reload}
               showAdvancedPosition={showAdvancedPosition}
             />
