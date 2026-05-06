@@ -1,8 +1,14 @@
 /* 跟踪清单表格 */
 import { useEffect, useRef, useState } from 'react'
 import classNames from 'classnames'
-import { Check, Pencil, Trash2, X } from 'lucide-react'
-import { fetchGz, loadDaily, removeWatchlist, updateWatchlistPosition } from '@services/api'
+import { Check, Minus, Pencil, Plus, Trash2, X } from 'lucide-react'
+import {
+  fetchGz,
+  loadDaily,
+  removeWatchlist,
+  transactWatchlistPosition,
+  updateWatchlistPosition,
+} from '@services/api'
 import type { DailyRow, GzData, WatchFund } from '@/types'
 import { pct, pctClass } from '@/utils/format'
 import shared from '@/styles/shared.module.scss'
@@ -21,6 +27,8 @@ interface Row {
   daily?: DailyRow | null
   previousDaily?: DailyRow | null
 }
+
+type PositionEditMode = 'set' | 'buy' | 'sell'
 
 function toNumber(value: string | null | undefined): number | null {
   if (!value) return null
@@ -81,33 +89,6 @@ function getCurrentChange(gz: GzData | null | undefined, daily: DailyRow | null 
   }
 }
 
-function getValuationPrice(
-  gz: GzData | null | undefined,
-  daily: DailyRow | null | undefined,
-  previousDaily: DailyRow | null | undefined
-) {
-  const currentNav = toNumber(daily?.dwjz)
-  if (currentNav != null) {
-    return {
-      value: currentNav,
-      date: daily?.date || '',
-    }
-  }
-
-  const estimatePrice = toNumber(gz?.gsz)
-  if (estimatePrice != null) {
-    return {
-      value: estimatePrice,
-      date: gz?.gztime || '',
-    }
-  }
-
-  return {
-    value: toNumber(previousDaily?.dwjz),
-    date: previousDaily?.date || gz?.jzrq || '',
-  }
-}
-
 function getNavPrice(
   gz: GzData | null | undefined,
   daily: DailyRow | null | undefined,
@@ -135,13 +116,22 @@ function getNavPrice(
   }
 }
 
-function getChangeAmount(
-  holdingAmount: number | null | undefined,
+function getDailyProfitFromEndingAmount(
+  endingAmount: number | null | undefined,
   changePercent: string | null | undefined
 ) {
   const percent = toNumber(changePercent)
-  if (holdingAmount == null || percent == null) return null
-  return holdingAmount * (percent / 100)
+  if (endingAmount == null || percent == null) return null
+  if (percent <= -100) return null
+  return endingAmount * (percent / (100 + percent))
+}
+
+function getPositionBasis(fund: WatchFund) {
+  const shares = fund.holding_shares ?? fund.holding_units ?? null
+  const costPrice = fund.holding_cost_price ?? null
+  const costAmount =
+    fund.holding_amount ?? (shares != null && costPrice != null ? shares * costPrice : null)
+  return { shares, costPrice, costAmount }
 }
 
 function formatMoney(value: number | null | undefined): string {
@@ -221,6 +211,7 @@ export default function Watchlist({ funds, showAdvancedPosition, onChange }: Pro
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [editingCode, setEditingCode] = useState('')
+  const [editMode, setEditMode] = useState<PositionEditMode>('set')
   const [amountDraft, setAmountDraft] = useState('')
   const [holdingPopoverCode, setHoldingPopoverCode] = useState('')
   const [sharesDraft, setSharesDraft] = useState('')
@@ -290,19 +281,26 @@ export default function Watchlist({ funds, showAdvancedPosition, onChange }: Pro
     }
   }
 
-  function startCurrentValueEdit(e: React.MouseEvent, code: string, currentAmount: number | null) {
+  function startEdit(
+    e: React.MouseEvent,
+    code: string,
+    currentAmount: number | null,
+    mode: PositionEditMode = 'set'
+  ) {
     e.stopPropagation()
     clearPopoverCloseTimer()
     setHoldingPopoverCode('')
     setSharesDraft('')
     setCostDraft('')
     setEditingCode(code)
-    setAmountDraft(currentAmount != null ? currentAmount.toFixed(2) : '')
+    setEditMode(mode)
+    setAmountDraft(mode === 'set' && currentAmount != null ? currentAmount.toFixed(2) : '')
   }
 
   function cancelCurrentValueEdit(e: React.MouseEvent) {
     e.stopPropagation()
     setEditingCode('')
+    setEditMode('set')
     setAmountDraft('')
   }
 
@@ -340,8 +338,12 @@ export default function Watchlist({ funds, showAdvancedPosition, onChange }: Pro
   ) {
     e.stopPropagation()
     const raw = amountDraft.trim().replace(/,/g, '')
-    if (!raw) {
+    if (!raw && editMode === 'set') {
       await clearCurrentValuePosition(e, fund)
+      return
+    }
+    if (!raw) {
+      alert('买入/卖出金额必须大于 0')
       return
     }
 
@@ -350,18 +352,27 @@ export default function Watchlist({ funds, showAdvancedPosition, onChange }: Pro
       alert('请输入有效的当前持有金额')
       return
     }
+    if (amount <= 0 && editMode !== 'set') {
+      alert('买入/卖出金额必须大于 0')
+      return
+    }
     if (amount > 0 && (!navPrice || navPrice <= 0)) {
-      alert('当前净值或估值不可用，暂时不能设置当前持有金额')
+      alert('当前净值不可用，暂时不能设置当前持有金额')
       return
     }
 
     try {
       setSavingCode(fund.code)
-      await updateWatchlistPosition(fund.code, {
-        holdingAmount: amount > 0 ? amount : null,
-        navPrice,
-      })
+      if (editMode === 'set') {
+        await updateWatchlistPosition(fund.code, {
+          holdingAmount: amount > 0 ? amount : null,
+          navPrice,
+        })
+      } else {
+        await transactWatchlistPosition(fund.code, editMode, amount, navPrice as number)
+      }
       setEditingCode('')
+      setEditMode('set')
       setAmountDraft('')
       onChange?.()
     } catch (err) {
@@ -380,6 +391,7 @@ export default function Watchlist({ funds, showAdvancedPosition, onChange }: Pro
         navPrice: null,
       })
       setEditingCode('')
+      setEditMode('set')
       setAmountDraft('')
       onChange?.()
     } catch (err) {
@@ -420,84 +432,60 @@ export default function Watchlist({ funds, showAdvancedPosition, onChange }: Pro
     }
   }
 
-  // 上一交易日总盈亏：当前持有 × 上一交易日（或当日）涨跌幅
-  const prevDayProfit = rows.reduce<number | null>((total, { fund, gz, daily, previousDaily }) => {
-    const holdingUnits = fund.holding_units ?? null
-    const navPrice = getNavPrice(gz, daily, previousDaily)
-    const mv = holdingUnits != null && navPrice.value != null ? holdingUnits * navPrice.value : null
-    const costAmount =
-      fund.holding_amount ??
-      (fund.holding_shares != null && fund.holding_cost_price != null
-        ? fund.holding_shares * fund.holding_cost_price
-        : null)
-    const rawHolding = mv ?? costAmount
-    if (rawHolding == null) return total
-
-    const currentChange = getCurrentChange(gz, daily)
-    const changeAmount = currentChange.value
-      ? getChangeAmount(rawHolding, currentChange.value)
-      : getChangeAmount(rawHolding, previousDaily?.jzzzl)
-    if (changeAmount == null) return total
-    return (total ?? 0) + changeAmount
+  const totalCostAmount = rows.reduce<number | null>((total, { fund }) => {
+    const { costAmount } = getPositionBasis(fund)
+    if (costAmount == null) return total
+    return (total ?? 0) + costAmount
   }, null)
-
-  // 当前持有总盈亏：sum(当前持有价值) - sum(初始值)
-  const holdingProfit = rows.reduce<number | null>((total, { fund, gz, daily, previousDaily }) => {
-    const holdingUnits = fund.holding_units ?? null
+  const totalMarketAmount = rows.reduce<number | null>((total, { fund, gz, daily, previousDaily }) => {
+    const { shares } = getPositionBasis(fund)
+    if (shares == null) return total
     const navPrice = getNavPrice(gz, daily, previousDaily)
-    const mv = holdingUnits != null && navPrice.value != null ? holdingUnits * navPrice.value : null
-    const originalAmount =
-      fund.holding_amount ??
-      (fund.holding_shares != null && fund.holding_cost_price != null
-        ? fund.holding_shares * fund.holding_cost_price
-        : null) ??
-      mv
-    if (originalAmount == null) return total
-
-    const rawHolding = mv ?? originalAmount
-
-    const currentChange = getCurrentChange(gz, daily)
-    const effectivePrevJzzzl = !currentChange.value ? toNumber(previousDaily?.jzzzl) : null
-    const currentHolding =
-      rawHolding != null && effectivePrevJzzzl != null
-        ? rawHolding * (1 + effectivePrevJzzzl / 100)
-        : rawHolding
-    if (currentHolding == null) return total
-    return (total ?? 0) + (currentHolding - originalAmount)
+    if (navPrice.value == null) return total
+    return (total ?? 0) + shares * navPrice.value
   }, null)
+  const totalProfit =
+    totalMarketAmount != null && totalCostAmount != null
+      ? totalMarketAmount - totalCostAmount
+      : null
+  const totalProfitState = moneyClass(totalProfit)
 
-  const prevDayProfitState = moneyClass(prevDayProfit)
-  const holdingProfitState = moneyClass(holdingProfit)
+  const totalPreviousProfit = rows.reduce<number | null>((total, { fund, previousDaily }) => {
+    const { shares, costAmount } = getPositionBasis(fund)
+    if (shares == null || costAmount == null || !previousDaily?.dwjz) return total
+    const previousHoldingAmount = shares * Number(previousDaily.dwjz)
+    const profit = getDailyProfitFromEndingAmount(previousHoldingAmount, previousDaily.jzzzl)
+    if (profit == null) return total
+    return (total ?? 0) + profit
+  }, null)
 
   return (
     <section className={shared.card}>
       <div className={shared.cardHead}>
         <h2>跟踪清单</h2>
-        <div className={styles.profitGroup}>
-          <div
-            className={classNames(
-              styles.profitBadge,
-              prevDayProfitState ? styles[prevDayProfitState] : styles.flat
-            )}
-            title="上一交易日涨跌幅应用于当前持有"
-          >
-            <span>昨日盈亏</span>
-            <strong>
-              {prevDayProfit != null && prevDayProfit > 0 ? '+' : ''}
-              {formatMoney(prevDayProfit)}
-            </strong>
+        <div className={styles.summaryGroup}>
+          <div className={styles.totalCost} title="当前持仓成本基准，买入增加、卖出按比例减少">
+            <span>买入总额</span>
+            <strong>¥{formatMoney(totalCostAmount)}</strong>
           </div>
           <div
             className={classNames(
-              styles.profitBadge,
-              holdingProfitState ? styles[holdingProfitState] : styles.flat
+              styles.totalProfit,
+              totalProfitState ? styles[totalProfitState] : styles.flat
             )}
-            title="当前持有总价值 - 初始值之和"
+            title="按最新真实净值持有市值减买入总额计算"
           >
-            <span>持有盈亏</span>
+            <span>总盈亏</span>
             <strong>
-              {holdingProfit != null && holdingProfit > 0 ? '+' : ''}
-              {formatMoney(holdingProfit)}
+              {totalProfit != null && totalProfit > 0 ? '+' : ''}
+              {formatMoney(totalProfit)}
+            </strong>
+          </div>
+          <div className={styles.totalCost} title="按上一交易日净值涨跌和持有份额合计">
+            <span>上日盈亏</span>
+            <strong>
+              {totalPreviousProfit != null && totalPreviousProfit > 0 ? '+' : ''}
+              {formatMoney(totalPreviousProfit)}
             </strong>
           </div>
         </div>
@@ -542,47 +530,29 @@ export default function Watchlist({ funds, showAdvancedPosition, onChange }: Pro
                   const previousState = pctClass(previousDaily?.jzzzl)
                   const currentChange = getCurrentChange(gz, daily)
                   const currentState = pctClass(currentChange.value)
-                  const valuationPrice = getValuationPrice(gz, daily, previousDaily)
                   const navPrice = getNavPrice(gz, daily, previousDaily)
-                  const holdingUnits = fund.holding_units ?? null
-                  const marketValue =
-                    holdingUnits != null && navPrice.value != null
-                      ? holdingUnits * navPrice.value
-                      : null
-                  const holdingShares = fund.holding_shares ?? null
-                  const holdingCostPrice = fund.holding_cost_price ?? null
-                  const costAmount =
-                    fund.holding_amount ??
-                    (holdingShares != null && holdingCostPrice != null
-                      ? holdingShares * holdingCostPrice
-                      : null)
-                  const rawHolding = marketValue ?? costAmount
-                  // 没有当日涨跌（节假日/收盘后）时，用上一交易日涨跌更新持有价值
-                  const effectivePrevJzzzl = !currentChange.value
-                    ? toNumber(previousDaily?.jzzzl)
-                    : null
-                  const currentHolding =
-                    rawHolding != null && effectivePrevJzzzl != null
-                      ? rawHolding * (1 + effectivePrevJzzzl / 100)
-                      : rawHolding
+                  const { shares, costPrice, costAmount } = getPositionBasis(fund)
                   const holdingAmount =
-                    fund.holding_amount ??
-                    (holdingShares != null && holdingCostPrice != null
-                      ? holdingShares * holdingCostPrice
-                      : marketValue)
-                  // 当日有涨跌时才在"当前涨跌"列显示金额变动；节假日由"当前持有"列直接体现
-                  const holdingDelta = currentChange.value
-                    ? getChangeAmount(rawHolding, currentChange.value)
-                    : null
-                  const holdingState = moneyClass(holdingDelta)
+                    shares != null && navPrice.value != null ? shares * navPrice.value : null
+                  const previousHoldingAmount =
+                    shares != null && previousDaily?.dwjz
+                      ? shares * Number(previousDaily.dwjz)
+                      : null
+                  const previousProfit = getDailyProfitFromEndingAmount(
+                    previousHoldingAmount,
+                    previousDaily?.jzzzl
+                  )
+                  const previousProfitState = moneyClass(previousProfit)
+                  const totalPositionProfit =
+                    holdingAmount != null && costAmount != null ? holdingAmount - costAmount : null
                   const holdingAmountPreview =
                     parsePositiveNumber(sharesDraft) != null &&
                     parsePositiveNumber(costDraft) != null
                       ? parsePositiveNumber(sharesDraft)! * parsePositiveNumber(costDraft)!
                       : null
                   const positionMeta = showAdvancedPosition
-                    ? holdingShares != null && holdingCostPrice != null
-                      ? `${formatValue(holdingShares, 2)} 份 · 成本 ¥${formatValue(holdingCostPrice, 4)}`
+                    ? shares != null && costPrice != null
+                      ? `${formatValue(shares, 2)} 份 · 成本 ¥${formatValue(costPrice, 4)}`
                       : '悬停设置份额 / 成本价'
                     : '点击编辑当前持有'
                   const isEditing = editingCode === fund.code
@@ -604,6 +574,18 @@ export default function Watchlist({ funds, showAdvancedPosition, onChange }: Pro
                         >
                           {pct(previousDaily?.jzzzl)}
                         </span>
+                        {previousProfit != null && (
+                          <span
+                            className={classNames(
+                              styles.changeAmount,
+                              previousProfitState ? styles[previousProfitState] : styles.flat
+                            )}
+                            title="按上一交易日净值涨跌和持有份额计算"
+                          >
+                            {previousProfit > 0 ? '+' : ''}
+                            {formatMoney(previousProfit)}
+                          </span>
+                        )}
                       </td>
                       <td className="num">
                         <span className={styles.currentChangeGroup}>
@@ -630,18 +612,6 @@ export default function Watchlist({ funds, showAdvancedPosition, onChange }: Pro
                               {currentChange.label}
                             </span>
                           )}
-                          {holdingDelta != null && (
-                            <span
-                              className={classNames(
-                                styles.changeAmount,
-                                holdingState ? styles[holdingState] : styles.flat
-                              )}
-                              title="按当前持有金额估算的变化"
-                            >
-                              {holdingDelta > 0 ? '+' : ''}
-                              {formatMoney(holdingDelta)}
-                            </span>
-                          )}
                         </span>
                       </td>
                       <td
@@ -650,18 +620,64 @@ export default function Watchlist({ funds, showAdvancedPosition, onChange }: Pro
                       >
                         {isEditing ? (
                           <span className={styles.positionEditor}>
+                            <span className={styles.tradeModeGroup}>
+                              <button
+                                type="button"
+                                className={classNames(
+                                  styles.tradeModeBtn,
+                                  editMode === 'set' && styles.activeMode
+                                )}
+                                onClick={() => {
+                                  setEditMode('set')
+                                  setAmountDraft(
+                                    holdingAmount != null ? holdingAmount.toFixed(2) : ''
+                                  )
+                                }}
+                              >
+                                持有
+                              </button>
+                              <button
+                                type="button"
+                                className={classNames(
+                                  styles.tradeModeBtn,
+                                  editMode === 'buy' && styles.activeMode
+                                )}
+                                onClick={() => {
+                                  setEditMode('buy')
+                                  setAmountDraft('')
+                                }}
+                                title="按最新真实净值买入"
+                              >
+                                <Plus size={12} />
+                              </button>
+                              <button
+                                type="button"
+                                className={classNames(
+                                  styles.tradeModeBtn,
+                                  editMode === 'sell' && styles.activeMode
+                                )}
+                                onClick={() => {
+                                  setEditMode('sell')
+                                  setAmountDraft('')
+                                }}
+                                title="按最新真实净值卖出"
+                              >
+                                <Minus size={12} />
+                              </button>
+                            </span>
                             <input
                               value={amountDraft}
                               inputMode="decimal"
-                              placeholder="10000"
-                              aria-label={`${fund.name} 当前持有`}
+                              placeholder={editMode === 'set' ? '持有金额' : '交易金额'}
+                              aria-label={`${fund.name} ${editMode === 'set' ? '持有金额' : '交易金额'}`}
                               onChange={(e) => setAmountDraft(e.target.value)}
                               onKeyDown={(e) => {
                                 if (e.key === 'Enter') {
-                                  void saveCurrentValuePosition(e, fund, valuationPrice.value)
+                                  void saveCurrentValuePosition(e, fund, navPrice.value)
                                 }
                                 if (e.key === 'Escape') {
                                   setEditingCode('')
+                                  setEditMode('set')
                                   setAmountDraft('')
                                 }
                               }}
@@ -671,9 +687,7 @@ export default function Watchlist({ funds, showAdvancedPosition, onChange }: Pro
                               className={styles.iconBtn}
                               title="保存当前持有"
                               disabled={isSaving}
-                              onClick={(e) =>
-                                void saveCurrentValuePosition(e, fund, valuationPrice.value)
-                              }
+                              onClick={(e) => void saveCurrentValuePosition(e, fund, navPrice.value)}
                             >
                               <Check size={13} />
                             </button>
@@ -698,24 +712,40 @@ export default function Watchlist({ funds, showAdvancedPosition, onChange }: Pro
                                 type="button"
                                 className={styles.positionValue}
                                 title={
-                                  holdingShares != null && holdingCostPrice != null
-                                    ? `${formatValue(holdingShares, 2)} 份 × ¥${formatValue(holdingCostPrice, 4)}`
+                                  shares != null && costPrice != null
+                                    ? `${formatValue(shares, 2)} 份 × ¥${formatValue(costPrice, 4)}${totalPositionProfit != null ? `，总盈亏 ${totalPositionProfit > 0 ? '+' : ''}${formatMoney(totalPositionProfit)}` : ''}`
                                     : navPrice.date
-                                      ? `按基金净值 ${navPrice.value ?? '—'}（${navPrice.date}）计算`
+                                      ? `按最新真实净值 ${navPrice.value ?? '—'}（${navPrice.date}）计算`
                                       : undefined
                                 }
-                                onClick={(e) => startCurrentValueEdit(e, fund.code, currentHolding)}
+                                onClick={(e) => startEdit(e, fund.code, holdingAmount)}
                               >
-                                <span>¥{formatMoney(currentHolding)}</span>
+                                <span>¥{formatMoney(holdingAmount)}</span>
                                 <em>{positionMeta}</em>
                               </button>
                               <button
                                 type="button"
                                 className={styles.iconBtn}
-                                title={currentHolding != null ? '更新当前持有' : '设置当前持有'}
-                                onClick={(e) => startCurrentValueEdit(e, fund.code, currentHolding)}
+                                title={shares != null ? '更新持有金额' : '设置持有金额'}
+                                onClick={(e) => startEdit(e, fund.code, holdingAmount)}
                               >
                                 <Pencil size={12} />
+                              </button>
+                              <button
+                                type="button"
+                                className={styles.iconBtn}
+                                title="买入"
+                                onClick={(e) => startEdit(e, fund.code, holdingAmount, 'buy')}
+                              >
+                                <Plus size={12} />
+                              </button>
+                              <button
+                                type="button"
+                                className={styles.iconBtn}
+                                title="卖出"
+                                onClick={(e) => startEdit(e, fund.code, holdingAmount, 'sell')}
+                              >
+                                <Minus size={12} />
                               </button>
                             </span>
                             {isHoldingPopoverOpen && (

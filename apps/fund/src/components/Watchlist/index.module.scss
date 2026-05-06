@@ -38,13 +38,15 @@
   padding: 9px 10px;
 }
 
-.profitGroup {
-  display: flex;
+.summaryGroup {
+  align-items: center;
+  display: inline-flex;
   gap: 8px;
   margin-left: auto;
 }
 
-.profitBadge {
+.totalCost,
+.totalProfit {
   align-items: center;
   background: rgba(146, 160, 170, 0.08);
   border: 1px solid rgba(146, 160, 170, 0.18);
@@ -73,7 +75,7 @@
 }
 
 .watchTable {
-  min-width: 1000px;
+  min-width: 1120px;
   table-layout: fixed;
 
   th {
@@ -98,7 +100,7 @@
 }
 
 .positionCol {
-  width: 188px;
+  width: 292px;
 }
 
 .positionCellTd {
@@ -172,8 +174,8 @@
   display: inline-flex;
   gap: 6px;
   justify-content: flex-end;
-  min-width: 168px;
-  width: 168px;
+  min-width: 272px;
+  width: 272px;
 }
 
 .positionValue {
@@ -239,8 +241,8 @@
   display: inline-flex;
   gap: 6px;
   justify-content: flex-end;
-  min-width: 168px;
-  width: 168px;
+  min-width: 272px;
+  width: 272px;
 
   input {
     background: rgba(3, 9, 14, 0.72);
@@ -251,7 +253,7 @@
     font-family: var(--mono);
     font-size: 12px;
     height: 34px;
-    width: 96px;
+    width: 92px;
     outline: none;
     padding: 0 8px;
     text-align: right;
@@ -261,6 +263,46 @@
       box-shadow: 0 0 0 2px rgba(110, 198, 255, 0.16);
     }
   }
+}
+
+.tradeModeGroup {
+  align-items: center;
+  background: rgba(255, 255, 255, 0.025);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  display: inline-flex;
+  flex: 0 0 auto;
+  overflow: hidden;
+}
+
+.tradeModeBtn {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  border-right: 1px solid var(--line);
+  color: var(--muted);
+  cursor: pointer;
+  display: inline-flex;
+  font-size: 11px;
+  font-weight: 700;
+  height: 30px;
+  justify-content: center;
+  min-width: 30px;
+  padding: 0 7px;
+
+  &:last-child {
+    border-right: 0;
+  }
+
+  &:hover {
+    background: rgba(110, 198, 255, 0.08);
+    color: var(--accent-strong);
+  }
+}
+
+.activeMode {
+  background: rgba(110, 198, 255, 0.14);
+  color: var(--accent-strong);
 }
 
 .iconBtn {
@@ -379,8 +421,10 @@
 }
 
 @media (max-width: 700px) {
-  .profitGroup {
+  .summaryGroup {
     margin-left: 0;
+    overflow-x: auto;
+    width: 100%;
   }
 
   .removeBtn {
@@ -398,7 +442,7 @@
   }
 
   .positionCell {
-    min-width: 168px;
+    min-width: 272px;
   }
 
   .positionValue {
@@ -406,6 +450,6 @@
   }
 
   .positionEditor input {
-    width: 96px;
+    width: 92px;
   }
 }

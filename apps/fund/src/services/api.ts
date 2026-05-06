@@ -110,6 +110,22 @@ export const updateWatchlistPosition = (
     }),
   })
 
+export const transactWatchlistPosition = (
+  code: string,
+  transactionType: 'buy' | 'sell',
+  transactionAmount: number,
+  navPrice: number
+): Promise<WatchFund> =>
+  request<WatchFund>(`/api/fund/watchlist/${code}/position`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      transaction_type: transactionType,
+      transaction_amount: transactionAmount,
+      nav_price: navPrice,
+    }),
+  })
+
 export const removeWatchlist = async (code: string): Promise<void> => {
   const res = await fetch(url(`/api/fund/watchlist/${code}`), {
     method: 'DELETE',
