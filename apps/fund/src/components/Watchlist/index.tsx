@@ -607,7 +607,7 @@ export default function Watchlist({ funds, portfolio, showAdvancedPosition, onCh
                     ? shares != null && costPrice != null
                       ? `${formatValue(shares, 2)} 份 · 成本 ¥${formatValue(costPrice, 4)}`
                       : '悬停设置份额 / 成本价'
-                    : '点击编辑当前持有'
+                    : ''
                   const isEditing = editingCode === fund.code
                   const isSaving = savingCode === fund.code
                   const isHoldingPopoverOpen =
@@ -776,7 +776,7 @@ export default function Watchlist({ funds, portfolio, showAdvancedPosition, onCh
                                 onClick={(e) => startEdit(e, fund.code, holdingAmount)}
                               >
                                 <span>¥{formatMoney(holdingAmount)}</span>
-                                <em>{positionMeta}</em>
+                                {positionMeta && <em>{positionMeta}</em>}
                               </button>
                               <button
                                 type="button"
