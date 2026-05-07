@@ -3,7 +3,7 @@ import type { PointerEvent } from 'react'
 import classNames from 'classnames'
 import { fetchQuotes, loadDaily, loadHoldings, loadMeta, loadWatchlist } from '@services/api'
 import type { DailyData, FundMeta, HoldingsData, QuoteRow } from '@/types'
-import { isTradeMinute, num, pct, pctClass } from '@/utils/format'
+import { isAfterClose, isTradeMinute, num, pct, pctClass } from '@/utils/format'
 import shared from '@/styles/shared.module.scss'
 import styles from './index.module.scss'
 
@@ -441,10 +441,14 @@ export default function Detail({ code }: Props) {
                               <span
                                 className={classNames(
                                   styles.chgTag,
-                                  isTradeMinute() ? styles.liveTag : styles.prevTag
+                                  isTradeMinute()
+                                    ? styles.liveTag
+                                    : isAfterClose()
+                                      ? styles.closeTag
+                                      : styles.prevTag
                                 )}
                               >
-                                {isTradeMinute() ? '实时' : '昨收'}
+                                {isTradeMinute() ? '实时' : isAfterClose() ? '收盘' : '昨收'}
                               </span>
                             )}
                           </span>

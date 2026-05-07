@@ -28,6 +28,13 @@ export function isTradeMinute(d = new Date()): boolean {
   return (hm >= 9 * 60 + 30 && hm <= 11 * 60 + 30) || (hm >= 13 * 60 && hm <= 15 * 60)
 }
 
+/** 工作日 15:00 之后（已收盘，能拿到今日收盘价）*/
+export function isAfterClose(d = new Date()): boolean {
+  const dow = d.getDay()
+  if (dow < 1 || dow > 5) return false
+  return d.getHours() * 60 + d.getMinutes() > 15 * 60
+}
+
 export function formatDateTime(s: string | undefined): string {
   if (!s) return ''
   return s.length > 16 ? s.slice(0, 16).replace('T', ' ') : s
