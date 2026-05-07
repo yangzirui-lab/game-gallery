@@ -1,12 +1,11 @@
 /* 跟踪清单表格 */
 import { useEffect, useRef, useState } from 'react'
 import classNames from 'classnames'
-import { Check, LogOut, Minus, Pencil, Plus, Trash2, X } from 'lucide-react'
+import { Check, Minus, Pencil, Plus, Trash2, X } from 'lucide-react'
 import {
   fetchGz,
   loadDaily,
   removeWatchlist,
-  sellWatchlistPosition,
   transactWatchlistPosition,
   updateWatchlistPosition,
 } from '@services/api'
@@ -862,37 +861,11 @@ export default function Watchlist({ funds, showAdvancedPosition, onChange }: Pro
                         {(currentChange.time || '').slice(-5) || '—'}
                       </td>
                       <td className="num">
-                        {fund.holding_shares != null && (
-                          <button
-                            type="button"
-                            className={styles.sellBtn}
-                            title="清仓（清空持有份额，保留上日盈亏）"
-                            aria-label={`清仓 ${fund.name}`}
-                            disabled={isSaving}
-                            onClick={async (e) => {
-                              e.stopPropagation()
-                              if (!window.confirm(`确认清仓 ${fund.name}？`)) return
-                              try {
-                                setSavingCode(fund.code)
-                                await sellWatchlistPosition(fund.code)
-                                onChange?.()
-                              } catch (err) {
-                                alert(
-                                  '清仓失败：' + (err instanceof Error ? err.message : String(err))
-                                )
-                              } finally {
-                                setSavingCode('')
-                              }
-                            }}
-                          >
-                            <LogOut size={13} />
-                          </button>
-                        )}
                         <button
                           type="button"
                           className={styles.removeBtn}
-                          title="移除跟踪"
-                          aria-label={`移除跟踪 ${fund.name}`}
+                          title="清仓并移除"
+                          aria-label={`清仓并移除 ${fund.name}`}
                           onClick={(e) => void handleRemove(e, fund.code, fund.name)}
                         >
                           <Trash2 size={13} />

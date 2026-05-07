@@ -8,30 +8,6 @@
   text-align: center;
 }
 
-.sellBtn {
-  background: rgba(255, 255, 255, 0.025);
-  border: 1px solid transparent;
-  color: var(--muted);
-  min-width: 32px;
-  min-height: 32px;
-  padding: 2px 4px;
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-
-  &:hover {
-    background: rgba(255, 165, 0, 0.1);
-    border-color: rgba(255, 165, 0, 0.28);
-    color: orange;
-  }
-
-  &:disabled {
-    opacity: 0.4;
-    cursor: not-allowed;
-  }
-}
-
 .removeBtn {
   background: rgba(255, 255, 255, 0.025);
   border: 1px solid transparent;
