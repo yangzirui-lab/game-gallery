@@ -1,5 +1,6 @@
 /* 搜索区：调后端 /api/fund/search + /api/fund/realtime */
 import { useRef, useState } from 'react'
+import { Search as SearchIcon } from 'lucide-react'
 import { addWatchlist, fetchGz, searchFunds } from '@services/api'
 import type { GzData, SearchHit, WatchFund } from '@/types'
 import { pct, pctClass } from '@/utils/format'
@@ -181,6 +182,9 @@ export default function Search({ watchlist, onWatchlistChange, inline = false }:
   if (inline) {
     return (
       <div className={styles.inlineBox}>
+        <span className={styles.inlineIcon}>
+          <SearchIcon size={14} />
+        </span>
         {inputEl}
         {dropdown}
       </div>
