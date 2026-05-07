@@ -23,6 +23,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       web: ${{ steps.filter.outputs.web }}
+      home: ${{ steps.filter.outputs.home }}
       fund: ${{ steps.filter.outputs.fund }}
       godot: ${{ steps.filter.outputs.godot }}
     steps:
@@ -35,6 +36,13 @@ jobs:
             web:
               - 'apps/game-gallery/**'
               - '!apps/game-gallery/public/godot-tower-defense/**'
+              - 'packages/auth/**'
+              - 'package.json'
+              - 'package-lock.json'
+              - '.github/workflows/deploy-linux.yml'
+            home:
+              - 'apps/home/**'
+              - 'packages/auth/**'
               - 'package.json'
               - 'package-lock.json'
               - '.github/workflows/deploy-linux.yml'
@@ -54,6 +62,7 @@ jobs:
     env:
       FORCE_ALL: ${{ github.event.inputs.force_all == 'true' }}
       WEB_CHANGED: ${{ needs.changes.outputs.web }}
+      HOME_CHANGED: ${{ needs.changes.outputs.home }}
       FUND_CHANGED: ${{ needs.changes.outputs.fund }}
       GODOT_CHANGED: ${{ needs.changes.outputs.godot }}
 
@@ -66,17 +75,37 @@ jobs:
           cache: 'npm'
 
       - name: Install dependencies
-        if: env.WEB_CHANGED == 'true' || env.FUND_CHANGED == 'true' || env.FORCE_ALL == 'true'
+        if: env.WEB_CHANGED == 'true' || env.HOME_CHANGED == 'true' || env.FUND_CHANGED == 'true' || env.FORCE_ALL == 'true'
         run: npm ci
         env:
           CI: true
 
-      # ===== 主前端 apps/game-gallery =====
+      # ===== 主页 apps/home =====
+      - name: Build home frontend
+        if: env.HOME_CHANGED == 'true' || env.FORCE_ALL == 'true'
+        working-directory: ./apps/home
+        env:
+          VITE_BASE_PATH: /
+        run: npm run build
+
+      - name: Deploy home to home-dist branch
+        if: env.HOME_CHANGED == 'true' || env.FORCE_ALL == 'true'
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./apps/home/dist
+          publish_branch: home-dist
+          force_orphan: true
+          user_name: 'github-actions[bot]'
+          user_email: 'github-actions[bot]@users.noreply.github.com'
+          commit_message: 'Deploy home build ${{ github.sha }}'
+
+      # ===== game-gallery apps/game-gallery =====
       - name: Build web frontend
         if: env.WEB_CHANGED == 'true' || env.FORCE_ALL == 'true'
         working-directory: ./apps/game-gallery
         env:
-          VITE_BASE_PATH: /
+          VITE_BASE_PATH: /game-gallery/
           VITE_API_URL: https://degenerates.site
         run: npm run build
 
@@ -135,10 +164,11 @@ jobs:
 
       # ===== 服务器侧同步 =====
       - name: Deploy to Linux Server
-        if: env.WEB_CHANGED == 'true' || env.FUND_CHANGED == 'true' || env.GODOT_CHANGED == 'true' || env.FORCE_ALL == 'true'
+        if: env.WEB_CHANGED == 'true' || env.HOME_CHANGED == 'true' || env.FUND_CHANGED == 'true' || env.GODOT_CHANGED == 'true' || env.FORCE_ALL == 'true'
         uses: appleboy/ssh-action@master
         env:
           WEB_CHANGED: ${{ needs.changes.outputs.web }}
+          HOME_CHANGED: ${{ needs.changes.outputs.home }}
           FUND_CHANGED: ${{ needs.changes.outputs.fund }}
           GODOT_CHANGED: ${{ needs.changes.outputs.godot }}
           FORCE_ALL: ${{ github.event.inputs.force_all == 'true' }}
@@ -147,7 +177,7 @@ jobs:
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: ${{ secrets.SSH_PORT || 22 }}
-          envs: WEB_CHANGED,FUND_CHANGED,GODOT_CHANGED,FORCE_ALL
+          envs: WEB_CHANGED,HOME_CHANGED,FUND_CHANGED,GODOT_CHANGED,FORCE_ALL
           timeout: 25m
           command_timeout: 25m
           script: |
@@ -209,6 +239,12 @@ jobs:
 
             REPO=${{ github.repository }}
 
+            if [ "$HOME_CHANGED" = "true" ] || [ "$FORCE_ALL" = "true" ]; then
+              download_branch_to "$REPO" home-dist /opt/degenerates-frontend/home/dist
+            else
+              echo "skip home (no changes)"
+            fi
+
             if [ "$FUND_CHANGED" = "true" ] || [ "$FORCE_ALL" = "true" ]; then
               download_branch_to "$REPO" fund-dist /opt/fund-tracker/web/dist
             else
@@ -216,7 +252,6 @@ jobs:
             fi
 
             if [ "$WEB_CHANGED" = "true" ] || [ "$FORCE_ALL" = "true" ]; then
-              # web 现在不含 godot（已 4MB）
               download_branch_to "$REPO" game-gallery-dist /opt/degenerates-frontend/game-gallery/dist
             else
               echo "skip web (no changes)"
@@ -234,6 +269,7 @@ jobs:
       - name: Done
         run: |
           echo "Deployment summary:"
+          echo "  home:  ${{ env.HOME_CHANGED == 'true' && '✓ deployed' || 'skipped' }}"
           echo "  web:   ${{ env.WEB_CHANGED == 'true' && '✓ deployed' || 'skipped' }}"
           echo "  fund:  ${{ env.FUND_CHANGED == 'true' && '✓ deployed' || 'skipped' }}"
           echo "  godot: ${{ env.GODOT_CHANGED == 'true' && '✓ deployed' || 'skipped' }}"

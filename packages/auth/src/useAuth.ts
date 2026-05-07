@@ -1,8 +1,3 @@
-/**
- * 认证 Hook
- * 提供认证状态管理和操作方法
- */
-
 import { useState, useEffect, useCallback } from 'react'
 import {
   login as loginService,
@@ -10,10 +5,8 @@ import {
   logout as logoutService,
   isAuthenticated,
   getCurrentUser as getCurrentUserService,
-} from '@/services/auth'
-import type { AuthActionResult, RegisterRequest, User } from '@/types'
-
-// ==================== Types ====================
+} from './auth'
+import type { AuthActionResult, RegisterRequest, User } from './types'
 
 interface UseAuthResult {
   isAuthenticated: boolean
@@ -25,35 +18,22 @@ interface UseAuthResult {
   refreshUser: () => void
 }
 
-// ==================== Hook ====================
-
 function useAuth(): UseAuthResult {
   const [isLoading, setIsLoading] = useState(true)
   const [user, setUser] = useState<User | null>(null)
   const [authenticated, setAuthenticated] = useState(false)
 
-  /**
-   * 刷新用户信息
-   */
   const refreshUser = useCallback(() => {
     const currentUser = getCurrentUserService()
     setUser(currentUser)
     setAuthenticated(isAuthenticated())
   }, [])
 
-  /**
-   * 初始化认证状态
-   */
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional: initialize auth state on mount
     refreshUser()
     setIsLoading(false)
   }, [refreshUser])
 
-  /**
-   * 登录 - 使用用户名和密码
-   * Session Token 会通过 Cookie 自动管理
-   */
   const login = useCallback(
     async (account: string, password: string): Promise<AuthActionResult> => {
       setIsLoading(true)
@@ -73,9 +53,6 @@ function useAuth(): UseAuthResult {
     []
   )
 
-  /**
-   * 注册并自动登录
-   */
   const register = useCallback(async (params: RegisterRequest): Promise<AuthActionResult> => {
     setIsLoading(true)
 
@@ -92,9 +69,6 @@ function useAuth(): UseAuthResult {
     return result
   }, [])
 
-  /**
-   * 登出
-   */
   const logout = useCallback(async () => {
     setIsLoading(true)
 
@@ -115,8 +89,6 @@ function useAuth(): UseAuthResult {
     refreshUser,
   }
 }
-
-// ==================== Exports ====================
 
 export type { UseAuthResult }
 

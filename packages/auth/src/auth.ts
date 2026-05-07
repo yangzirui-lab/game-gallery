@@ -1,15 +1,4 @@
-/**
- * 认证服务
- * 使用 Cookie-based Session Token 认证
- * 提供密码登录、注册、登出、Token 管理等功能
- */
-
-import {
-  AUTH_INVITE_CODES_API,
-  AUTH_LOGIN_API,
-  AUTH_LOGOUT_API,
-  AUTH_REGISTER_API,
-} from '@/constants/api'
+import { AUTH_INVITE_CODES_API, AUTH_LOGIN_API, AUTH_LOGOUT_API, AUTH_REGISTER_API } from './api'
 import type {
   User,
   AuthActionResult,
@@ -18,14 +7,10 @@ import type {
   InviteCodeResponse,
   LoginRequest,
   RegisterRequest,
-} from '@/types'
-
-// ==================== Constants ====================
+} from './types'
 
 const TOKEN_KEY = 'session_token'
 const USER_KEY = 'auth_user'
-
-// ==================== Types ====================
 
 interface ApiErrorResponse {
   error: string
@@ -39,11 +24,6 @@ type AuthRequestPayload =
     }
   | RegisterRequest
 
-// ==================== User Management ====================
-
-/**
- * 保存认证信息到本地存储
- */
 function saveAuthData(token: string, user: User): void {
   if (!token || token.trim() === '') {
     console.error('[Auth] Cannot save auth data: Invalid token')
@@ -59,9 +39,6 @@ function saveAuthData(token: string, user: User): void {
   localStorage.setItem(USER_KEY, JSON.stringify(user))
 }
 
-/**
- * 获取保存的用户信息
- */
 function getUser(): User | null {
   const userJson = localStorage.getItem(USER_KEY)
 
@@ -77,16 +54,10 @@ function getUser(): User | null {
   }
 }
 
-/**
- * 获取保存的 token
- */
 function getToken(): string | null {
   return localStorage.getItem(TOKEN_KEY)
 }
 
-/**
- * 清除认证信息
- */
 function clearAuthData(): void {
   localStorage.removeItem(TOKEN_KEY)
   localStorage.removeItem(USER_KEY)
@@ -189,22 +160,10 @@ async function authenticate(
   }
 }
 
-// ==================== API Methods ====================
-
-/**
- * 账号密码登录
- * @param params - 登录参数（兼容 account/username）
- * @returns 登录结果
- */
 async function login(params: LoginRequest): Promise<AuthActionResult> {
   return authenticate(AUTH_LOGIN_API, normalizeLoginRequest(params), 'login')
 }
 
-/**
- * 注册并自动登录
- * @param params - 注册参数
- * @returns 注册结果
- */
 async function register(params: RegisterRequest): Promise<AuthActionResult> {
   return authenticate(
     AUTH_REGISTER_API,
@@ -218,10 +177,6 @@ async function register(params: RegisterRequest): Promise<AuthActionResult> {
   )
 }
 
-/**
- * 生成或获取今日邀请码
- * @returns 邀请码结果
- */
 async function generateInviteCode(): Promise<InviteCodeActionResult> {
   const token = getToken()
 
@@ -257,10 +212,6 @@ async function generateInviteCode(): Promise<InviteCodeActionResult> {
   }
 }
 
-/**
- * 登出
- * @returns 成功返回 true，失败返回 false
- */
 async function logout(): Promise<boolean> {
   const token = getToken()
 
@@ -281,29 +232,18 @@ async function logout(): Promise<boolean> {
     }
   }
 
-  // 无论服务器响应如何，都清除本地认证信息
   clearAuthData()
   console.log('[Auth] Logout successful, token cleared')
   return true
 }
 
-/**
- * 检查是否已登录
- * 通过本地是否有用户信息判断
- * 注意：实际的认证状态由服务器 Cookie 决定
- */
 function isAuthenticated(): boolean {
   return getUser() !== null
 }
 
-/**
- * 获取当前登录用户
- */
 function getCurrentUser(): User | null {
   return getUser()
 }
-
-// ==================== Exports ====================
 
 export {
   login,

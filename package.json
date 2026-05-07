@@ -5,14 +5,17 @@
   "description": "游戏收藏管理平台 - Monorepo",
   "workspaces": [
     "apps/*",
-    "games/*"
+    "games/*",
+    "packages/*"
   ],
   "scripts": {
     "dev": "npm run dev -w apps/game-gallery",
+    "dev:home": "npm run dev -w apps/home",
     "dev:fund": "npm run dev -w apps/fund",
     "build": "npm run build -w apps/game-gallery",
+    "build:home": "npm run build -w apps/home",
     "build:fund": "npm run build -w apps/fund",
-    "build:all": "npm run build -w apps/game-gallery && npm run build -w apps/fund",
+    "build:all": "npm run build -w apps/game-gallery && npm run build -w apps/fund && npm run build -w apps/home",
     "prepare": "husky || true"
   },
   "lint-staged": {
@@ -24,6 +27,11 @@
     "apps/fund/**/*.{js,jsx,ts,tsx}": [
       "bash -c 'cd apps/fund && npx tsc --noEmit -p tsconfig.app.json'",
       "eslint --config apps/fund/eslint.config.js --fix",
+      "prettier --write"
+    ],
+    "apps/home/**/*.{js,jsx,ts,tsx}": [
+      "bash -c 'cd apps/home && npx tsc --noEmit -p tsconfig.app.json'",
+      "eslint --config apps/home/eslint.config.js --fix",
       "prettier --write"
     ],
     "*.{json,css,scss,md}": [

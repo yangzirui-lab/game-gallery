@@ -1,7 +1,7 @@
 import React from 'react'
 import { X } from '../icons/Icons'
 import { useIconStyle } from '../icons/IconStyleContext'
-import LoginButton from '../LoginButton'
+import { LoginButton } from '@degenerates/auth'
 import styles from './index.module.scss'
 
 interface SettingsProps {

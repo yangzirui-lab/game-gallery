@@ -11,7 +11,7 @@ import type {
   GetUserGamesResponse,
 } from '../types'
 import { USER_GAMES_API, getUserGameApiUrl, getUserGameStatusApiUrl } from '../constants/api'
-import { getToken } from './auth'
+import { getToken } from '@degenerates/auth'
 
 // ==================== Main Class ====================
 

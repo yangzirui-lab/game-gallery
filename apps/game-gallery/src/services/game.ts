@@ -9,7 +9,7 @@ import type {
   Pagination,
 } from '../types'
 import { GAMES_API, GAMES_SEARCH_API, getGameApiUrl } from '../constants/api'
-import { getToken } from './auth'
+import { getToken } from '@degenerates/auth'
 
 // ==================== Main Class ====================
 

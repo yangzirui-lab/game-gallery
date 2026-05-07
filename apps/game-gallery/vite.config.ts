@@ -6,8 +6,7 @@ import path from 'path'
 export default defineConfig({
   plugins: [react()],
   base:
-    process.env.VITE_BASE_PATH ||
-    (process.env.NODE_ENV === 'production' ? '/degenerates-frontend/' : '/'),
+    process.env.VITE_BASE_PATH || (process.env.NODE_ENV === 'production' ? '/game-gallery/' : '/'),
 
   // 路径别名配置
   resolve: {
@@ -41,7 +40,7 @@ export default defineConfig({
           'vendor-physics': ['matter-js'],
 
           // 服务层
-          services: ['./src/services/github', './src/services/steam', './src/services/auth'],
+          services: ['./src/services/github', './src/services/steam'],
         },
 
         // 文件命名策略

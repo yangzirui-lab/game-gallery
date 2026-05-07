@@ -1,21 +1,13 @@
-/**
- * 登录表单组件
- * 提供账号密码登录和邀请码注册功能
- * 支持紧凑模式（横向）和完整模式（纵向）
- */
-
 import { useState } from 'react'
-import { useAuth } from '@/hooks/useAuth'
-import { generateInviteCode as generateInviteCodeService } from '@/services/auth'
-import type { InviteCodeData } from '@/types'
-import { Loader2, LogIn, LogOut, Plus } from './icons/Icons'
+import { Loader2, LogIn, LogOut, Plus } from 'lucide-react'
+import { useAuth } from './useAuth'
+import { generateInviteCode as generateInviteCodeService } from './auth'
+import type { InviteCodeData } from './types'
 import styles from './LoginButton.module.scss'
 
-// ==================== Types ====================
-
 interface LoginButtonProps {
-  mode?: 'compact' | 'full' // 紧凑模式或完整模式
-  onLoginSuccess?: () => void // 登录成功回调
+  mode?: 'compact' | 'full'
+  onLoginSuccess?: () => void
 }
 
 type AuthMode = 'login' | 'register'
@@ -31,9 +23,7 @@ function formatInviteCode(value: string): string {
   return compact.replace(/(.{4})/g, '$1-').replace(/-$/, '')
 }
 
-// ==================== Component ====================
-
-function LoginButton({ mode = 'compact', onLoginSuccess }: LoginButtonProps = {}) {
+function LoginButton({ mode = 'compact', onLoginSuccess }: LoginButtonProps) {
   const { isAuthenticated, user, isLoading, login, register, logout } = useAuth()
   const [authMode, setAuthMode] = useState<AuthMode>('login')
   const [account, setAccount] = useState('')
@@ -325,7 +315,6 @@ function LoginButton({ mode = 'compact', onLoginSuccess }: LoginButtonProps = {}
               disabled={isSubmitting}
               className={styles.inputFull}
               autoComplete="username"
-              autoFocus
             />
           </div>
 
@@ -443,7 +432,5 @@ function LoginButton({ mode = 'compact', onLoginSuccess }: LoginButtonProps = {}
     </div>
   )
 }
-
-// ==================== Exports ====================
 
 export default LoginButton
