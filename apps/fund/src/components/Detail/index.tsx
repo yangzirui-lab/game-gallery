@@ -440,10 +440,8 @@ export default function Detail({ code }: Props) {
                         <td>{row.name}</td>
                         <td className="num">{row.ratio.toFixed(2)}%</td>
                         <td className="num">{num(quote?.price)}</td>
-                        <td
-                          className={classNames('num', isTodayNav ? pctClass(quote?.chg) : '')}
-                        >
-                          {isTodayNav ? pct(quote?.chg) : '—'}
+                        <td className={classNames('num', pctClass(quote?.chg))}>
+                          {pct(quote?.chg)}
                         </td>
                       </tr>
                     )
