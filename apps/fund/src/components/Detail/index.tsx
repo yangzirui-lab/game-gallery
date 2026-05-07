@@ -309,7 +309,6 @@ export default function Detail({ code }: Props) {
   }
 
   const latestDailyRows = useMemo(() => sortDailyRowsDesc(daily?.rows), [daily])
-  const latestDaily = latestDailyRows[0]
   const dailyValues = useMemo(() => [...latestDailyRows].slice(0, 30).reverse(), [latestDailyRows])
   const dailyChartPoints = useMemo(() => buildDailyChartPoints(dailyValues), [dailyValues])
   const dailyReturn = useMemo(() => {
