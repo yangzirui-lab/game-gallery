@@ -1,7 +1,7 @@
 /* 跟踪清单表格 */
 import { useEffect, useRef, useState } from 'react'
 import classNames from 'classnames'
-import { Check, Minus, Pencil, Plus, Trash2, X } from 'lucide-react'
+import { Check, LogOut, Minus, Pencil, Plus, Trash2, X } from 'lucide-react'
 import {
   fetchGz,
   loadDaily,
@@ -417,6 +417,7 @@ export default function Watchlist({ funds, showAdvancedPosition, onChange }: Pro
 
   async function clearCurrentValuePosition(e: React.SyntheticEvent, fund: WatchFund) {
     e.stopPropagation()
+    if (!window.confirm(`确认清仓 ${fund.name}？将清空全部持有份额。`)) return
     try {
       setSavingCode(fund.code)
       await updateWatchlistPosition(fund.code, {
@@ -856,6 +857,18 @@ export default function Watchlist({ funds, showAdvancedPosition, onChange }: Pro
                         {(currentChange.time || '').slice(-5) || '—'}
                       </td>
                       <td className="num">
+                        {shares != null && (
+                          <button
+                            type="button"
+                            className={styles.sellBtn}
+                            title="清仓（清空持有份额）"
+                            aria-label={`清仓 ${fund.name}`}
+                            disabled={isSaving}
+                            onClick={(e) => void clearCurrentValuePosition(e, fund)}
+                          >
+                            <LogOut size={13} />
+                          </button>
+                        )}
                         <button
                           type="button"
                           className={styles.removeBtn}
