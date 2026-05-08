@@ -25,6 +25,9 @@
   span {
     font-size: 15px;
     color: var(--text);
+
+    &:global(.up) { color: var(--red); }
+    &:global(.down) { color: var(--green); }
   }
 }
 
