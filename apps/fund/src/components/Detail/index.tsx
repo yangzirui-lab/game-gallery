@@ -383,33 +383,36 @@ export default function Detail({ code }: Props) {
           <div className={styles.metaGrid}>
             <div>
               <label>{isTradeMinute() ? '当前估值' : '净值'}</label>
-              <span>
+              <span className={styles.chgGroup}>
                 {isTradeMinute() ? (
                   gz?.gsz ? (
                     <>
-                      {gz.gsz}
+                      <span className={pctClass(gz.gszzl)}>{gz.gsz}</span>
                       {gz.gszzl && (
-                        <span className={classNames('small', pctClass(gz.gszzl))}>
-                          {' '}
+                        <span className={classNames(styles.chgTag, styles.liveTag)}>
                           {pct(gz.gszzl)}
                         </span>
                       )}
                     </>
                   ) : (
-                    latestDailyRows[0]?.dwjz || '-'
+                    <span>{latestDailyRows[0]?.dwjz || '—'}</span>
                   )
                 ) : latestDailyRows[0]?.dwjz ? (
                   <>
-                    {latestDailyRows[0].dwjz}
+                    <span>{latestDailyRows[0].dwjz}</span>
                     {latestDailyRows[0].jzzzl && (
-                      <span className={classNames('small', pctClass(latestDailyRows[0].jzzzl))}>
-                        {' '}
+                      <span
+                        className={classNames(
+                          styles.chgTag,
+                          isAfterClose() ? styles.closeTag : styles.prevTag
+                        )}
+                      >
                         {pct(latestDailyRows[0].jzzzl)}
                       </span>
                     )}
                   </>
                 ) : (
-                  '-'
+                  <span>—</span>
                 )}
               </span>
             </div>
