@@ -384,30 +384,35 @@ export default function Detail({ code }: Props) {
             <div>
               <label>{isTradeMinute() ? '当前估值' : '净值'}</label>
               <span>
-                {isTradeMinute() ? (
-                  gz?.gsz ? (
+                {(() => {
+                  const today = new Date()
+                  const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`
+                  const todayNav =
+                    latestDailyRows[0]?.date === todayStr ? latestDailyRows[0] : null
+                  if (isTradeMinute()) {
+                    if (!gz?.gsz) return '—'
+                    return (
+                      <>
+                        {gz.gsz}
+                        {gz.gszzl && (
+                          <span className={pctClass(gz.gszzl)}> {pct(gz.gszzl)}</span>
+                        )}
+                      </>
+                    )
+                  }
+                  if (!todayNav?.dwjz) return '—'
+                  return (
                     <>
-                      {gz.gsz}
-                      {gz.gszzl && (
-                        <span className={pctClass(gz.gszzl)}> {pct(gz.gszzl)}</span>
+                      {todayNav.dwjz}
+                      {todayNav.jzzzl && (
+                        <span className={pctClass(todayNav.jzzzl)}>
+                          {' '}
+                          {pct(todayNav.jzzzl)}
+                        </span>
                       )}
                     </>
-                  ) : (
-                    latestDailyRows[0]?.dwjz || '—'
                   )
-                ) : latestDailyRows[0]?.dwjz ? (
-                  <>
-                    {latestDailyRows[0].dwjz}
-                    {latestDailyRows[0].jzzzl && (
-                      <span className={pctClass(latestDailyRows[0].jzzzl)}>
-                        {' '}
-                        {pct(latestDailyRows[0].jzzzl)}
-                      </span>
-                    )}
-                  </>
-                ) : (
-                  '—'
-                )}
+                })()}
               </span>
             </div>
             <div>
