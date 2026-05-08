@@ -381,40 +381,70 @@ export default function Detail({ code }: Props) {
 
         <section className={shared.card}>
           <div className={styles.metaGrid}>
-            <div>
-              <label>{isTradeMinute() ? '当前估值' : '净值'}</label>
-              <span>
-                {(() => {
-                  const today = new Date()
-                  const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`
-                  const todayNav =
-                    latestDailyRows[0]?.date === todayStr ? latestDailyRows[0] : null
-                  if (isTradeMinute()) {
-                    if (!gz?.gsz) return '—'
-                    return (
+            {(() => {
+              const today = new Date()
+              const isWeekday = today.getDay() >= 1 && today.getDay() <= 5
+              const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`
+              const todayNav = latestDailyRows[0]?.date === todayStr ? latestDailyRows[0] : null
+              const latestNav = latestDailyRows[0] ?? null
+
+              // 交易日：有净值用净值，否则用估值；非交易日：用最新净值（上一交易日）
+              if (isWeekday) {
+                if (todayNav?.dwjz) {
+                  return (
+                    <div>
+                      <label>净值</label>
+                      <span>
+                        {todayNav.dwjz}
+                        {todayNav.jzzzl && (
+                          <span className={pctClass(todayNav.jzzzl)}>
+                            {' '}
+                            {pct(todayNav.jzzzl)}
+                          </span>
+                        )}
+                      </span>
+                    </div>
+                  )
+                }
+                return (
+                  <div>
+                    <label>当前估值</label>
+                    <span>
+                      {gz?.gsz ? (
+                        <>
+                          {gz.gsz}
+                          {gz.gszzl && (
+                            <span className={pctClass(gz.gszzl)}> {pct(gz.gszzl)}</span>
+                          )}
+                        </>
+                      ) : (
+                        '—'
+                      )}
+                    </span>
+                  </div>
+                )
+              }
+              return (
+                <div>
+                  <label>净值</label>
+                  <span>
+                    {latestNav?.dwjz ? (
                       <>
-                        {gz.gsz}
-                        {gz.gszzl && (
-                          <span className={pctClass(gz.gszzl)}> {pct(gz.gszzl)}</span>
+                        {latestNav.dwjz}
+                        {latestNav.jzzzl && (
+                          <span className={pctClass(latestNav.jzzzl)}>
+                            {' '}
+                            {pct(latestNav.jzzzl)}
+                          </span>
                         )}
                       </>
-                    )
-                  }
-                  if (!todayNav?.dwjz) return '—'
-                  return (
-                    <>
-                      {todayNav.dwjz}
-                      {todayNav.jzzzl && (
-                        <span className={pctClass(todayNav.jzzzl)}>
-                          {' '}
-                          {pct(todayNav.jzzzl)}
-                        </span>
-                      )}
-                    </>
-                  )
-                })()}
-              </span>
-            </div>
+                    ) : (
+                      '—'
+                    )}
+                  </span>
+                </div>
+              )
+            })()}
             <div>
               <label>规模</label>
               <span>
