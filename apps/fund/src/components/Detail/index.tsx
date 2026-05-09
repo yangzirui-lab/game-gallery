@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { PointerEvent } from 'react'
 import classNames from 'classnames'
-import { fetchGz, fetchQuotes, loadDaily, loadHoldings, loadMeta, loadWatchlist } from '@services/api'
+import { addWatchlist, fetchGz, fetchQuotes, getSessionToken, loadDaily, loadHoldings, loadMeta, loadWatchlist } from '@services/api'
 import type { DailyData, FundMeta, GzData, HoldingsData, QuoteRow } from '@/types'
 import { isAfterClose, isTradeMinute, num, pct, pctClass } from '@/utils/format'
 import shared from '@/styles/shared.module.scss'
@@ -214,6 +214,8 @@ export default function Detail({ code }: Props) {
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState('')
   const [quoteRefreshing, setQuoteRefreshing] = useState(false)
+  const [isTracked, setIsTracked] = useState(false)
+  const [isAdding, setIsAdding] = useState(false)
 
   const holdingsRef = useRef<HoldingsData | null>(null)
   const loadRequestRef = useRef(0)
@@ -268,6 +270,7 @@ export default function Detail({ code }: Props) {
 
       const watch = (watchlist || []).find((item) => item.code === code)
       setFundName(watch?.name || metaData?.name || code)
+      setIsTracked(!!watch)
 
       const holdingSecids = holdingsData?.rows.map((row) => row.secid).filter(Boolean) || []
       const nextHoldingQuotes = holdingSecids.length ? await fetchQuotes(holdingSecids) : []
@@ -306,6 +309,17 @@ export default function Detail({ code }: Props) {
     if (!secids.length) return
 
     setHoldingQuotes(await fetchQuotes(secids))
+  }
+
+  async function handleTrack() {
+    if (isAdding || isTracked) return
+    setIsAdding(true)
+    try {
+      await addWatchlist(code, fundName)
+      setIsTracked(true)
+    } finally {
+      setIsAdding(false)
+    }
   }
 
   async function manualRefreshQuotes() {
@@ -352,6 +366,16 @@ export default function Detail({ code }: Props) {
           >
             天天基金
           </a>
+          {getSessionToken() && (
+            <button
+              type="button"
+              className={shared.ghostBtn}
+              onClick={handleTrack}
+              disabled={isTracked || isAdding}
+            >
+              {isTracked ? '已追踪' : isAdding ? '追踪中...' : '+ 追踪'}
+            </button>
+          )}
         </div>
       </header>
 

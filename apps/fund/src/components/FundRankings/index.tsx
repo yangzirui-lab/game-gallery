@@ -1,10 +1,15 @@
 import { useEffect, useState } from 'react'
 import classNames from 'classnames'
-import { loadTop30dFunds, loadTopPreviousDayFunds } from '@services/api'
-import type { FundDailyRankRow, FundRankRow } from '@/types'
+import { addWatchlist, getSessionToken, loadTop30dFunds, loadTopPreviousDayFunds } from '@services/api'
+import type { FundDailyRankRow, FundRankRow, WatchFund } from '@/types'
 import { pct, pctClass } from '@/utils/format'
 import shared from '@/styles/shared.module.scss'
 import styles from './index.module.scss'
+
+interface Props {
+  watchlist?: WatchFund[]
+  onWatchlistChange?: () => void
+}
 
 function shortDate(value?: string | null): string {
   if (!value) return '--'
@@ -15,43 +20,65 @@ function shortDate(value?: string | null): string {
 function RankList({
   rows,
   variant,
+  watchlist,
+  onTrack,
+  adding,
 }: {
   rows: Array<FundRankRow | FundDailyRankRow>
   variant: '30d' | 'previous'
+  watchlist?: WatchFund[]
+  onTrack?: (code: string, name: string) => void
+  adding: string | null
 }) {
+  const loggedIn = !!getSessionToken()
   return (
     <ol className={styles.rankList}>
-      {rows.map((row, index) => (
-        <li key={row.code}>
-          <a href={`#/fund/${row.code}`} className={styles.rankItem}>
-            <span className={styles.rankNo}>{index + 1}</span>
-            <span className={styles.fundMain}>
-              <span className={styles.fundTitle}>
-                <span className={styles.code}>{row.code}</span>
-                <strong>{row.name}</strong>
+      {rows.map((row, index) => {
+        const isTracked = watchlist?.some((w) => w.code === row.code) ?? false
+        return (
+          <li key={row.code} className={styles.rankRow}>
+            <a href={`#/fund/${row.code}`} className={styles.rankItem}>
+              <span className={styles.rankNo}>{index + 1}</span>
+              <span className={styles.fundMain}>
+                <span className={styles.fundTitle}>
+                  <span className={styles.code}>{row.code}</span>
+                  <strong>{row.name}</strong>
+                </span>
+                <span className={styles.meta}>
+                  {variant === '30d'
+                    ? `${shortDate((row as FundRankRow).base_date)} 至 ${shortDate((row as FundRankRow).latest_date)}`
+                    : `净值日 ${shortDate((row as FundDailyRankRow).date)}`}
+                  {row.ftype && <span>{row.ftype}</span>}
+                </span>
               </span>
-              <span className={styles.meta}>
-                {variant === '30d'
-                  ? `${shortDate((row as FundRankRow).base_date)} 至 ${shortDate((row as FundRankRow).latest_date)}`
-                  : `净值日 ${shortDate((row as FundDailyRankRow).date)}`}
-                {row.ftype && <span>{row.ftype}</span>}
+              <span className={classNames(styles.returnBadge, pctClass(row.return_pct))}>
+                {pct(row.return_pct)}
               </span>
-            </span>
-            <span className={classNames(styles.returnBadge, pctClass(row.return_pct))}>
-              {pct(row.return_pct)}
-            </span>
-          </a>
-        </li>
-      ))}
+            </a>
+            {loggedIn && (
+              <button
+                type="button"
+                className={classNames(styles.trackBtn, isTracked && styles.trackBtnTracked)}
+                onClick={() => !isTracked && onTrack?.(row.code, row.name)}
+                disabled={isTracked || adding === row.code}
+                title={isTracked ? '已追踪' : '加入追踪'}
+              >
+                {isTracked ? '✓' : adding === row.code ? '…' : '+'}
+              </button>
+            )}
+          </li>
+        )
+      })}
     </ol>
   )
 }
 
-export default function FundRankings() {
+export default function FundRankings({ watchlist, onWatchlistChange }: Props) {
   const [top30d, setTop30d] = useState<FundRankRow[]>([])
   const [topPreviousDay, setTopPreviousDay] = useState<FundDailyRankRow[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [adding, setAdding] = useState<string | null>(null)
 
   useEffect(() => {
     let cancelled = false
@@ -81,6 +108,17 @@ export default function FundRankings() {
     }
   }, [])
 
+  async function handleTrack(code: string, name: string) {
+    if (adding) return
+    setAdding(code)
+    try {
+      await addWatchlist(code, name)
+      onWatchlistChange?.()
+    } finally {
+      setAdding(null)
+    }
+  }
+
   return (
     <section className={shared.card}>
       <div className={shared.cardHead}>
@@ -99,7 +137,13 @@ export default function FundRankings() {
               <span>真实净值涨幅</span>
             </div>
             {topPreviousDay.length ? (
-              <RankList rows={topPreviousDay} variant="previous" />
+              <RankList
+                rows={topPreviousDay}
+                variant="previous"
+                watchlist={watchlist}
+                onTrack={handleTrack}
+                adding={adding}
+              />
             ) : (
               <div className={styles.status}>暂无上交易日净值数据</div>
             )}
@@ -110,7 +154,13 @@ export default function FundRankings() {
               <span>区间净值涨幅</span>
             </div>
             {top30d.length ? (
-              <RankList rows={top30d} variant="30d" />
+              <RankList
+                rows={top30d}
+                variant="30d"
+                watchlist={watchlist}
+                onTrack={handleTrack}
+                adding={adding}
+              />
             ) : (
               <div className={styles.status}>暂无足够 30 天净值数据</div>
             )}

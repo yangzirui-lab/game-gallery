@@ -80,7 +80,7 @@ export default function Home() {
           </div>
         ) : (
           <>
-            <FundRankings />
+            <FundRankings watchlist={watchlist} onWatchlistChange={reload} />
             {watchlist.length === 0 ? (
               <div className={shared.statusBox}>
                 暂无跟踪数据，使用上方搜索框添加你想关注的基金。

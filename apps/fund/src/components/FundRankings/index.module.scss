@@ -36,6 +36,49 @@
   padding: 0;
 }
 
+.rankRow {
+  align-items: center;
+  display: flex;
+  gap: 6px;
+
+  .rankItem {
+    flex: 1;
+    min-width: 0;
+  }
+}
+
+.trackBtn {
+  background: rgba(110, 198, 255, 0.08);
+  border: 1px solid rgba(110, 198, 255, 0.2);
+  border-radius: 999px;
+  color: var(--accent-strong);
+  cursor: pointer;
+  flex: 0 0 auto;
+  font-size: 14px;
+  font-weight: 700;
+  height: 26px;
+  line-height: 1;
+  padding: 0;
+  transition: background 0.15s, border-color 0.15s;
+  width: 26px;
+
+  &:hover:not(:disabled) {
+    background: rgba(110, 198, 255, 0.18);
+    border-color: rgba(110, 198, 255, 0.4);
+  }
+
+  &:disabled {
+    cursor: default;
+  }
+}
+
+.trackBtnTracked {
+  background: rgba(110, 198, 255, 0.04);
+  border-color: rgba(110, 198, 255, 0.1);
+  color: var(--muted);
+  font-size: 12px;
+}
+
 .rankItem {
   align-items: center;
   background: var(--bg-elevated);
