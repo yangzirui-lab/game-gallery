@@ -154,6 +154,9 @@ export const searchFunds = async (key: string): Promise<SearchHit[]> => {
 export const loadTop30dFunds = (limit = 10): Promise<FundRankRow[]> =>
   request<FundRankRow[]>(`/api/fund/rank/30d?limit=${limit}`)
 
+export const refreshRankCache = (): Promise<{ ok: boolean }> =>
+  request<{ ok: boolean }>('/api/fund/rank/refresh', { method: 'POST' })
+
 export const loadTopPreviousDayFunds = (limit = 10): Promise<FundDailyRankRow[]> =>
   request<FundDailyRankRow[]>(`/api/fund/rank/previous-day?limit=${limit}`)
 

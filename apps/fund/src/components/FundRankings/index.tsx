@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import classNames from 'classnames'
-import { addWatchlist, getSessionToken, loadTop30dFunds, loadTopPreviousDayFunds } from '@services/api'
+import { addWatchlist, getSessionToken, loadTop30dFunds, loadTopPreviousDayFunds, refreshRankCache } from '@services/api'
 import type { FundDailyRankRow, FundRankRow, WatchFund } from '@/types'
 import { pct, pctClass } from '@/utils/format'
 import shared from '@/styles/shared.module.scss'
@@ -79,6 +79,22 @@ export default function FundRankings({ watchlist, onWatchlistChange }: Props) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [adding, setAdding] = useState<string | null>(null)
+  const [refreshing, setRefreshing] = useState(false)
+  const [refreshMsg, setRefreshMsg] = useState('')
+
+  async function handleRefreshCache() {
+    if (refreshing) return
+    setRefreshing(true)
+    setRefreshMsg('')
+    try {
+      await refreshRankCache()
+      setRefreshMsg('刷新已在后台启动，约 2-3 分钟后生效')
+    } catch {
+      setRefreshMsg('刷新失败')
+    } finally {
+      setRefreshing(false)
+    }
+  }
 
   useEffect(() => {
     let cancelled = false
@@ -123,7 +139,20 @@ export default function FundRankings({ watchlist, onWatchlistChange }: Props) {
     <section className={shared.card}>
       <div className={shared.cardHead}>
         <h2>基金涨幅排行</h2>
-        <span className="muted small">基于已缓存真实净值</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          {refreshMsg && <span className="muted small">{refreshMsg}</span>}
+          {getSessionToken() && (
+            <button
+              type="button"
+              className={shared.ghostBtn}
+              onClick={handleRefreshCache}
+              disabled={refreshing}
+            >
+              {refreshing ? '刷新中...' : '刷新缓存'}
+            </button>
+          )}
+          <span className="muted small">基于已缓存真实净值</span>
+        </div>
       </div>
       {loading ? (
         <div className={styles.status}>加载排行中...</div>
