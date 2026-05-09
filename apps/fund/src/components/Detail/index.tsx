@@ -402,6 +402,7 @@ export default function Detail({ code }: Props) {
                             {pct(todayNav.jzzzl)}
                           </span>
                         )}
+                        <span className="muted small"> ({todayNav.date})</span>
                       </span>
                     </div>
                   )
@@ -415,6 +416,9 @@ export default function Detail({ code }: Props) {
                           {gz.gsz}
                           {gz.gszzl && (
                             <span className={pctClass(gz.gszzl)}> {pct(gz.gszzl)}</span>
+                          )}
+                          {gz.gztime && (
+                            <span className="muted small"> ({gz.gztime.slice(0, 10)})</span>
                           )}
                         </>
                       ) : (
@@ -437,6 +441,7 @@ export default function Detail({ code }: Props) {
                             {pct(latestNav.jzzzl)}
                           </span>
                         )}
+                        <span className="muted small"> ({latestNav.date})</span>
                       </>
                     ) : (
                       '—'
