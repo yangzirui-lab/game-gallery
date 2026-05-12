@@ -1,5 +1,5 @@
 /* 跟踪清单表格 */
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import classNames from 'classnames'
 import { Check, Minus, Pencil, Plus, Trash2, X } from 'lucide-react'
 import {
@@ -476,6 +476,23 @@ export default function Watchlist({ funds, showAdvancedPosition, onChange }: Pro
     }
   }
 
+  const sortedRows = useMemo(() => {
+    const indexed = rows.map((row, i) => {
+      const { shares } = getPositionBasis(row.fund)
+      const navPrice = getNavPrice(row.gz, row.daily, row.previousDaily)
+      const amount = shares != null && navPrice.value != null ? shares * navPrice.value : null
+      return { row, amount, index: i }
+    })
+    indexed.sort((a, b) => {
+      if (a.amount == null && b.amount == null) return a.index - b.index
+      if (a.amount == null) return 1
+      if (b.amount == null) return -1
+      if (b.amount !== a.amount) return b.amount - a.amount
+      return a.index - b.index
+    })
+    return indexed.map((entry) => entry.row)
+  }, [rows])
+
   const totalPreviousProfit = rows.reduce<number | null>((total, { fund, previousDaily }) => {
     const { historyShares } = getPositionBasis(fund)
     if (historyShares == null || !previousDaily?.dwjz) return total
@@ -576,7 +593,7 @@ export default function Watchlist({ funds, showAdvancedPosition, onChange }: Pro
                 </tr>
               </thead>
               <tbody>
-                {rows.map(({ fund, gz, daily, previousDaily }) => {
+                {sortedRows.map(({ fund, gz, daily, previousDaily }) => {
                   const previousState = pctClass(previousDaily?.jzzzl)
                   const currentChange = getCurrentChange(gz, daily)
                   const currentState = pctClass(currentChange.value)
