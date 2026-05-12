@@ -23,8 +23,14 @@ export default function App() {
     return () => window.removeEventListener('hashchange', onHash)
   }, [])
 
-  if (route.page === 'detail' && route.code) {
-    return <Detail code={route.code} />
-  }
-  return <Home />
+  const isDetail = route.page === 'detail' && route.code
+
+  return (
+    <>
+      <div style={isDetail ? { display: 'none' } : undefined}>
+        <Home />
+      </div>
+      {isDetail && <Detail code={route.code!} />}
+    </>
+  )
 }
