@@ -1,6 +1,14 @@
 import { useEffect, useState } from 'react'
 import classNames from 'classnames'
-import { addWatchlist, getSessionToken, loadTop30dFunds, loadTopPreviousDayFunds, refreshRankCache } from '@services/api'
+import {
+  addWatchlist,
+  getSessionToken,
+  loadEstimateLoserFunds,
+  loadPreviousDayLoserFunds,
+  loadTop30dFunds,
+  loadTopPreviousDayFunds,
+  refreshRankCache,
+} from '@services/api'
 import type { FundDailyRankRow, FundRankRow, WatchFund } from '@/types'
 import { pct, pctClass } from '@/utils/format'
 import shared from '@/styles/shared.module.scss'
@@ -25,7 +33,7 @@ function RankList({
   adding,
 }: {
   rows: Array<FundRankRow | FundDailyRankRow>
-  variant: '30d' | 'previous'
+  variant: '30d' | 'previous' | 'previous-loser' | 'estimate-loser'
   watchlist?: WatchFund[]
   onTrack?: (code: string, name: string) => void
   adding: string | null
@@ -47,7 +55,9 @@ function RankList({
                 <span className={styles.meta}>
                   {variant === '30d'
                     ? `${shortDate((row as FundRankRow).base_date)} 至 ${shortDate((row as FundRankRow).latest_date)}`
-                    : `净值日 ${shortDate((row as FundDailyRankRow).date)}`}
+                    : variant === 'estimate-loser'
+                      ? `估值日 ${shortDate((row as FundDailyRankRow).date)}`
+                      : `净值日 ${shortDate((row as FundDailyRankRow).date)}`}
                   {row.ftype && <span>{row.ftype}</span>}
                 </span>
               </span>
@@ -76,6 +86,8 @@ function RankList({
 export default function FundRankings({ watchlist, onWatchlistChange }: Props) {
   const [top30d, setTop30d] = useState<FundRankRow[]>([])
   const [topPreviousDay, setTopPreviousDay] = useState<FundDailyRankRow[]>([])
+  const [previousDayLosers, setPreviousDayLosers] = useState<FundDailyRankRow[]>([])
+  const [estimateLosers, setEstimateLosers] = useState<FundDailyRankRow[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [adding, setAdding] = useState<string | null>(null)
@@ -103,13 +115,17 @@ export default function FundRankings({ watchlist, onWatchlistChange }: Props) {
       setLoading(true)
       setError('')
       try {
-        const [rank30d, rankPreviousDay] = await Promise.all([
+        const [rank30d, rankPreviousDay, rankPrevLosers, rankEstLosers] = await Promise.all([
           loadTop30dFunds(10),
           loadTopPreviousDayFunds(10),
+          loadPreviousDayLoserFunds(10),
+          loadEstimateLoserFunds(10),
         ])
         if (!cancelled) {
           setTop30d(rank30d)
           setTopPreviousDay(rankPreviousDay)
+          setPreviousDayLosers(rankPrevLosers)
+          setEstimateLosers(rankEstLosers)
         }
       } catch (err) {
         if (!cancelled) setError(err instanceof Error ? err.message : String(err))
@@ -138,7 +154,7 @@ export default function FundRankings({ watchlist, onWatchlistChange }: Props) {
   return (
     <section className={shared.card}>
       <div className={shared.cardHead}>
-        <h2>基金涨幅排行</h2>
+        <h2>基金涨跌排行</h2>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           {refreshMsg && <span className="muted small">{refreshMsg}</span>}
           {getSessionToken() && (
@@ -192,6 +208,40 @@ export default function FundRankings({ watchlist, onWatchlistChange }: Props) {
               />
             ) : (
               <div className={styles.status}>暂无足够 30 天净值数据</div>
+            )}
+          </div>
+          <div className={styles.rankPanel}>
+            <div className={styles.panelHead}>
+              <h3>上交易日跌幅 Top 10</h3>
+              <span>真实净值跌幅</span>
+            </div>
+            {previousDayLosers.length ? (
+              <RankList
+                rows={previousDayLosers}
+                variant="previous-loser"
+                watchlist={watchlist}
+                onTrack={handleTrack}
+                adding={adding}
+              />
+            ) : (
+              <div className={styles.status}>暂无上交易日跌幅数据</div>
+            )}
+          </div>
+          <div className={styles.rankPanel}>
+            <div className={styles.panelHead}>
+              <h3>当前估值跌幅 Top 10</h3>
+              <span>盘中估值跌幅</span>
+            </div>
+            {estimateLosers.length ? (
+              <RankList
+                rows={estimateLosers}
+                variant="estimate-loser"
+                watchlist={watchlist}
+                onTrack={handleTrack}
+                adding={adding}
+              />
+            ) : (
+              <div className={styles.status}>暂无当前估值跌幅数据</div>
             )}
           </div>
         </div>

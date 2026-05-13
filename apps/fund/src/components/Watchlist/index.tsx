@@ -193,7 +193,10 @@ function moneyClass(value: number | null | undefined): string {
 }
 
 async function fetchWatchlistSnapshot(fund: WatchFund): Promise<Row> {
-  const [gz, daily] = await Promise.all([fetchGz(fund.code), loadDaily(fund.code, 3)])
+  const [gz, daily] = await Promise.all([
+    fetchGz(fund.code),
+    loadDaily(fund.code, 3).catch(() => null),
+  ])
   const latestRows = [...(daily?.rows || [])].sort((a, b) => b.date.localeCompare(a.date))
   const latest = latestRows[0] ? withDerivedChange(latestRows[0], latestRows[1]) : undefined
   const previous = latestRows[1] ? withDerivedChange(latestRows[1], latestRows[2]) : undefined

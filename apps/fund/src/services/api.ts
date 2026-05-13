@@ -61,23 +61,49 @@ function authHeaders(headers?: HeadersInit): Headers {
   return next
 }
 
-async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(url(path), {
-    cache: 'no-cache',
-    ...init,
-    headers: authHeaders(init?.headers),
-  })
-  if (!res.ok) {
-    let detail = ''
-    try {
-      const body = (await res.json()) as BackendError
-      detail = body.message || body.error || ''
-    } catch {
-      // ignore
-    }
-    throw new ApiError(res.status, res.statusText, detail)
+const MAX_CONCURRENT = 3
+let running = 0
+const queue: Array<() => void> = []
+
+function acquireSlot(): Promise<void> {
+  if (running < MAX_CONCURRENT) {
+    running++
+    return Promise.resolve()
   }
-  return (await res.json()) as T
+  return new Promise<void>((resolve) => queue.push(resolve))
+}
+
+function releaseSlot() {
+  const next = queue.shift()
+  if (next) {
+    next()
+  } else {
+    running--
+  }
+}
+
+async function request<T>(path: string, init?: RequestInit): Promise<T> {
+  await acquireSlot()
+  try {
+    const res = await fetch(url(path), {
+      cache: 'no-cache',
+      ...init,
+      headers: authHeaders(init?.headers),
+    })
+    if (!res.ok) {
+      let detail = ''
+      try {
+        const body = (await res.json()) as BackendError
+        detail = body.message || body.error || ''
+      } catch {
+        // ignore
+      }
+      throw new ApiError(res.status, res.statusText, detail)
+    }
+    return (await res.json()) as T
+  } finally {
+    releaseSlot()
+  }
 }
 
 // ---------- watchlist ----------
@@ -159,6 +185,12 @@ export const refreshRankCache = (): Promise<{ ok: boolean }> =>
 
 export const loadTopPreviousDayFunds = (limit = 10): Promise<FundDailyRankRow[]> =>
   request<FundDailyRankRow[]>(`/api/fund/rank/previous-day?limit=${limit}`)
+
+export const loadPreviousDayLoserFunds = (limit = 10): Promise<FundDailyRankRow[]> =>
+  request<FundDailyRankRow[]>(`/api/fund/rank/previous-day-losers?limit=${limit}`)
+
+export const loadEstimateLoserFunds = (limit = 10): Promise<FundDailyRankRow[]> =>
+  request<FundDailyRankRow[]>(`/api/fund/rank/estimate-losers?limit=${limit}`)
 
 /** 兼容旧 import：本地索引已迁到后端，前端不再 bundle */
 export const loadFundsIndex = async (): Promise<FundIndexItem[]> => []
