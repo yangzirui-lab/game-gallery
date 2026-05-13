@@ -408,11 +408,9 @@
   border-radius: 12px;
   box-shadow: 0 18px 42px rgba(0, 0, 0, 0.42);
   padding: 12px;
-  position: absolute;
-  right: 0;
-  top: calc(100% - 2px);
+  position: fixed;
   width: 220px;
-  z-index: 20;
+  z-index: 1000;
 }
 
 .popoverTitle {

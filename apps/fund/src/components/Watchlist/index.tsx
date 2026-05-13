@@ -1,5 +1,6 @@
 /* 跟踪清单表格 */
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import classNames from 'classnames'
 import { Check, Minus, Pencil, Plus, Trash2, X } from 'lucide-react'
 import {
@@ -250,6 +251,9 @@ export default function Watchlist({ funds, showAdvancedPosition, onChange }: Pro
   const [editMode, setEditMode] = useState<PositionEditMode>('set')
   const [amountDraft, setAmountDraft] = useState('')
   const [holdingPopoverCode, setHoldingPopoverCode] = useState('')
+  const [popoverPos, setPopoverPos] = useState<{ top: number; left: number } | null>(null)
+  const popoverAnchorRef = useRef<HTMLElement | null>(null)
+  const popoverRef = useRef<HTMLDivElement | null>(null)
   const [sharesDraft, setSharesDraft] = useState('')
   const [costDraft, setCostDraft] = useState('')
   const [savingCode, setSavingCode] = useState('')
@@ -271,6 +275,19 @@ export default function Watchlist({ funds, showAdvancedPosition, onChange }: Pro
     void refreshAll()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [funds])
+
+  useLayoutEffect(() => {
+    if (!holdingPopoverCode || !popoverRef.current || !popoverAnchorRef.current) {
+      setPopoverPos(null)
+      return
+    }
+    const anchor = popoverAnchorRef.current.getBoundingClientRect()
+    const ph = popoverRef.current.offsetHeight
+    const pw = popoverRef.current.offsetWidth
+    const top = anchor.bottom + ph > window.innerHeight ? anchor.top - ph + 2 : anchor.bottom - 2
+    const left = Math.min(anchor.right - pw, window.innerWidth - pw - 8)
+    setPopoverPos({ top, left })
+  }, [holdingPopoverCode])
 
   useEffect(() => {
     return () => {
@@ -357,6 +374,7 @@ export default function Watchlist({ funds, showAdvancedPosition, onChange }: Pro
   function openHoldingPopover(fund: WatchFund) {
     if (!showAdvancedPosition || savingCode || editingCode === fund.code) return
     clearPopoverCloseTimer()
+    setPopoverPos(null)
     setHoldingPopoverCode(fund.code)
     setSharesDraft(
       fund.holding_shares != null && Number.isFinite(fund.holding_shares)
@@ -839,8 +857,10 @@ export default function Watchlist({ funds, showAdvancedPosition, onChange }: Pro
                         ) : (
                           <div
                             className={styles.positionWrap}
-                            onMouseEnter={() => openHoldingPopover(fund)}
-                            onMouseLeave={() => scheduleCloseHoldingPopover(fund.code)}
+                            ref={(el) => {
+                              if (el && holdingPopoverCode === fund.code)
+                                popoverAnchorRef.current = el
+                            }}
                           >
                             <span className={styles.positionCell}>
                               <span
@@ -864,82 +884,92 @@ export default function Watchlist({ funds, showAdvancedPosition, onChange }: Pro
                                 className={styles.iconBtn}
                                 title={shares != null ? '更新持有金额' : '设置持有金额'}
                                 onClick={(e) => startEdit(e, fund.code, holdingAmount)}
+                                onMouseEnter={() => openHoldingPopover(fund)}
+                                onMouseLeave={() => scheduleCloseHoldingPopover(fund.code)}
                               >
                                 <Pencil size={12} />
                               </button>
                             </span>
-                            {isHoldingPopoverOpen && (
-                              <div
-                                className={styles.holdingPopover}
-                                onMouseEnter={clearPopoverCloseTimer}
-                                onMouseLeave={() => scheduleCloseHoldingPopover(fund.code)}
-                              >
-                                <div className={styles.popoverTitle}>设置持有份额和成本价</div>
-                                <label className={styles.popoverField}>
-                                  <span>持有份额</span>
-                                  <input
-                                    value={sharesDraft}
-                                    inputMode="decimal"
-                                    placeholder="1000"
-                                    aria-label={`${fund.name} 持有份额`}
-                                    onChange={(e) => setSharesDraft(e.target.value)}
-                                    onKeyDown={(e) => {
-                                      if (e.key === 'Enter') {
-                                        void saveHoldingPosition(e, fund)
-                                      }
-                                      if (e.key === 'Escape') {
+                            {isHoldingPopoverOpen &&
+                              createPortal(
+                                <div
+                                  ref={popoverRef}
+                                  className={styles.holdingPopover}
+                                  style={
+                                    popoverPos
+                                      ? { top: popoverPos.top, left: popoverPos.left }
+                                      : { visibility: 'hidden', top: 0, left: 0 }
+                                  }
+                                  onMouseEnter={clearPopoverCloseTimer}
+                                  onMouseLeave={() => scheduleCloseHoldingPopover(fund.code)}
+                                >
+                                  <div className={styles.popoverTitle}>设置持有份额和成本价</div>
+                                  <label className={styles.popoverField}>
+                                    <span>持有份额</span>
+                                    <input
+                                      value={sharesDraft}
+                                      inputMode="decimal"
+                                      placeholder="1000"
+                                      aria-label={`${fund.name} 持有份额`}
+                                      onChange={(e) => setSharesDraft(e.target.value)}
+                                      onKeyDown={(e) => {
+                                        if (e.key === 'Enter') {
+                                          void saveHoldingPosition(e, fund)
+                                        }
+                                        if (e.key === 'Escape') {
+                                          setHoldingPopoverCode('')
+                                        }
+                                      }}
+                                    />
+                                  </label>
+                                  <label className={styles.popoverField}>
+                                    <span>持仓成本价</span>
+                                    <input
+                                      value={costDraft}
+                                      inputMode="decimal"
+                                      placeholder="1.2345"
+                                      aria-label={`${fund.name} 持仓成本价`}
+                                      onChange={(e) => setCostDraft(e.target.value)}
+                                      onKeyDown={(e) => {
+                                        if (e.key === 'Enter') {
+                                          void saveHoldingPosition(e, fund)
+                                        }
+                                        if (e.key === 'Escape') {
+                                          setHoldingPopoverCode('')
+                                        }
+                                      }}
+                                    />
+                                  </label>
+                                  <div className={styles.popoverHint}>
+                                    预估持有金额：¥
+                                    {formatMoney(holdingAmountPreview ?? holdingAmount)}
+                                  </div>
+                                  <div className={styles.popoverActions}>
+                                    <button
+                                      type="button"
+                                      className={styles.iconBtn}
+                                      title="保存份额和成本价"
+                                      disabled={isSaving}
+                                      onClick={(e) => void saveHoldingPosition(e, fund)}
+                                    >
+                                      <Check size={13} />
+                                    </button>
+                                    <button
+                                      type="button"
+                                      className={styles.iconBtn}
+                                      title="关闭"
+                                      disabled={isSaving}
+                                      onClick={(e) => {
+                                        e.stopPropagation()
                                         setHoldingPopoverCode('')
-                                      }
-                                    }}
-                                  />
-                                </label>
-                                <label className={styles.popoverField}>
-                                  <span>持仓成本价</span>
-                                  <input
-                                    value={costDraft}
-                                    inputMode="decimal"
-                                    placeholder="1.2345"
-                                    aria-label={`${fund.name} 持仓成本价`}
-                                    onChange={(e) => setCostDraft(e.target.value)}
-                                    onKeyDown={(e) => {
-                                      if (e.key === 'Enter') {
-                                        void saveHoldingPosition(e, fund)
-                                      }
-                                      if (e.key === 'Escape') {
-                                        setHoldingPopoverCode('')
-                                      }
-                                    }}
-                                  />
-                                </label>
-                                <div className={styles.popoverHint}>
-                                  预估持有金额：¥
-                                  {formatMoney(holdingAmountPreview ?? holdingAmount)}
-                                </div>
-                                <div className={styles.popoverActions}>
-                                  <button
-                                    type="button"
-                                    className={styles.iconBtn}
-                                    title="保存份额和成本价"
-                                    disabled={isSaving}
-                                    onClick={(e) => void saveHoldingPosition(e, fund)}
-                                  >
-                                    <Check size={13} />
-                                  </button>
-                                  <button
-                                    type="button"
-                                    className={styles.iconBtn}
-                                    title="关闭"
-                                    disabled={isSaving}
-                                    onClick={(e) => {
-                                      e.stopPropagation()
-                                      setHoldingPopoverCode('')
-                                    }}
-                                  >
-                                    <X size={13} />
-                                  </button>
-                                </div>
-                              </div>
-                            )}
+                                      }}
+                                    >
+                                      <X size={13} />
+                                    </button>
+                                  </div>
+                                </div>,
+                                document.body
+                              )}
                           </div>
                         )}
                       </td>
