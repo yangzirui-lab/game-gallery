@@ -177,20 +177,20 @@ export const searchFunds = async (key: string): Promise<SearchHit[]> => {
   return request<SearchHit[]>(`/api/fund/search?q=${encodeURIComponent(trimmed)}`)
 }
 
-export const loadTop30dFunds = (limit = 10): Promise<FundRankRow[]> =>
-  request<FundRankRow[]>(`/api/fund/rank/30d?limit=${limit}`)
+export const loadTop30dFunds = (limit = 10, cls = 'C'): Promise<FundRankRow[]> =>
+  request<FundRankRow[]>(`/api/fund/rank/30d?limit=${limit}&class=${cls}`)
 
 export const refreshRankCache = (): Promise<{ ok: boolean }> =>
   request<{ ok: boolean }>('/api/fund/rank/refresh', { method: 'POST' })
 
-export const loadTopPreviousDayFunds = (limit = 10): Promise<FundDailyRankRow[]> =>
-  request<FundDailyRankRow[]>(`/api/fund/rank/previous-day?limit=${limit}`)
+export const loadTopPreviousDayFunds = (limit = 10, cls = 'C'): Promise<FundDailyRankRow[]> =>
+  request<FundDailyRankRow[]>(`/api/fund/rank/previous-day?limit=${limit}&class=${cls}`)
 
-export const loadPreviousDayLoserFunds = (limit = 10): Promise<FundDailyRankRow[]> =>
-  request<FundDailyRankRow[]>(`/api/fund/rank/previous-day-losers?limit=${limit}`)
+export const loadPreviousDayLoserFunds = (limit = 10, cls = 'C'): Promise<FundDailyRankRow[]> =>
+  request<FundDailyRankRow[]>(`/api/fund/rank/previous-day-losers?limit=${limit}&class=${cls}`)
 
-export const loadEstimateLoserFunds = (limit = 10): Promise<FundDailyRankRow[]> =>
-  request<FundDailyRankRow[]>(`/api/fund/rank/estimate-losers?limit=${limit}`)
+export const loadEstimateLoserFunds = (limit = 10, cls = 'C'): Promise<FundDailyRankRow[]> =>
+  request<FundDailyRankRow[]>(`/api/fund/rank/estimate-losers?limit=${limit}&class=${cls}`)
 
 /** 兼容旧 import：本地索引已迁到后端，前端不再 bundle */
 export const loadFundsIndex = async (): Promise<FundIndexItem[]> => []
