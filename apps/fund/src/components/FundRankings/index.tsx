@@ -19,8 +19,8 @@ function shortDate(value?: string | null): string {
 }
 
 const PERIOD_META: Record<RankPeriod, { metaLabel: (row: RankRow) => string }> = {
-  estimate: { metaLabel: (r) => `估值日 ${shortDate(r.date)}` },
-  previous_day: { metaLabel: (r) => `净值日 ${shortDate(r.date)}` },
+  estimate: { metaLabel: (r) => `估值日 ${shortDate(r.latest_date)}` },
+  previous_day: { metaLabel: (r) => `净值日 ${shortDate(r.latest_date)}` },
   '30d': { metaLabel: (r) => `${shortDate(r.base_date)} 至 ${shortDate(r.latest_date)}` },
 }
 
@@ -166,6 +166,8 @@ export default function FundRankings({ watchlist, onWatchlistChange }: Props) {
   }
 
   const subtitles = PANEL_SUBTITLES[tab]
+  const dateHint =
+    tab === 'estimate' || tab === 'previous_day' ? shortDate(gainers[0]?.latest_date) : null
 
   return (
     <section className={shared.section}>
@@ -206,7 +208,10 @@ export default function FundRankings({ watchlist, onWatchlistChange }: Props) {
           <div className={styles.rankPanel}>
             <div className={styles.panelHead}>
               <h3>涨幅 Top 10</h3>
-              <span>{subtitles.gainers}</span>
+              <span>
+                {subtitles.gainers}
+                {dateHint && ` · ${dateHint}`}
+              </span>
             </div>
             {gainers.length ? (
               <RankList
@@ -223,7 +228,10 @@ export default function FundRankings({ watchlist, onWatchlistChange }: Props) {
           <div className={styles.rankPanel}>
             <div className={styles.panelHead}>
               <h3>跌幅 Top 10</h3>
-              <span>{subtitles.losers}</span>
+              <span>
+                {subtitles.losers}
+                {dateHint && ` · ${dateHint}`}
+              </span>
             </div>
             {losers.length ? (
               <RankList

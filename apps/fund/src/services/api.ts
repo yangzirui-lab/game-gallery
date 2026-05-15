@@ -183,7 +183,6 @@ export interface RankRow {
   name: string
   ftype?: string | null
   return_pct: number
-  date?: string | null
   base_date?: string | null
   latest_date?: string | null
 }
